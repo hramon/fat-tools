@@ -75,7 +75,7 @@ typedef struct _fat_Directory_Entry{
 	unsigned short DIR_WrtTime;
 	unsigned short DIR_WrtDate;
 	unsigned short DIR_FstClusLO;
-	unsigned short DIR_FileSize;
+	unsigned int DIR_FileSize;
 }fat_Directory_Entry;
 
 #define ATTR_READ_ONLY 0x01
@@ -122,6 +122,7 @@ void flush_fat(fat_object* obj);
 void copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination);
 internal_file* open_file_fat(fat_object* obj,char* path);
 void remove_file_fat(fat_object* obj,char* path);
+void clear_content_file_fat(fat_object* obj,internal_file* file);
 void write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned int size_buffer);
 void close_file_fat(fat_object* obj,internal_file* file);
 unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_directory);

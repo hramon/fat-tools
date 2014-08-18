@@ -136,11 +136,11 @@ void copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination){
 	internal_file* dest;
 	FILE* file = fopen((const char*)file_to_copy,"rb");
 
-	/*remove current file (if it excists*/
-	//remove_file_fat(obj,destination);
 
 	/*open destination handle*/
 	dest = open_file_fat(obj, destination);
+
+	clear_content_file_fat(obj,dest);
 
 	/*write the file to the disk*/
 	while(!feof(file)){
@@ -212,7 +212,7 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 			/*we need to find a file*/
 			find_type = FIND_FILE;
 		}else{
-			/*the string was to long, just keep it the short one*/
+			/*the string was to long, just keep the short one*/
 			find_type = FIND_BOTH; 
 		}
 
@@ -273,7 +273,7 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 				file->current_cluster = first_free_cluster;
 				file->current_cursor = 0;
 				file->start_cluster = file->current_cluster;
-				file->start_directory_entry = new_file*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus+obj->first_cluster;
+				file->start_directory_entry = (current_directory-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus+new_file*sizeof(fat_Directory_Entry)+obj->first_cluster;
 
 				memcpy(file->file.DIR_Name,name,11);
 				file->file.DIR_CrtDate = (time->tm_mday | ((time->tm_mon + 1)<<4) | ((time->tm_year - 20)<<8));
@@ -311,6 +311,7 @@ unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_dire
 	while(not_found){
 		unsigned int i;
 		unsigned int max = obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry);
+		unsigned int temp_cluster;
 
 		/*get current directory*/
 		fseek(obj->file,obj->first_cluster+(current_directory-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus,SEEK_SET);
@@ -335,12 +336,15 @@ unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_dire
 
 		/*find next cluster for this directory*/
 		fseek(obj->file,obj->start_fat+(current_directory-2)*4,SEEK_SET);
-		fread(&current_directory,sizeof(unsigned int),1,obj->file);
-		if(current_directory == 0xFFFFFFFF){
-			current_directory = find_next_free_cluster(obj);
-			fwrite(&current_directory,sizeof(unsigned int),1,obj->file);
+		fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
+		if(temp_cluster == 0xFFFFFFFF){
+			unsigned int next_cluster = find_next_free_cluster(obj);
+			fseek(obj->file,obj->start_fat+(current_directory-2)*sizeof(unsigned int),SEEK_SET);
+			fwrite(&next_cluster,sizeof(unsigned int),1,obj->file);
 			fflush(obj->file);
 		}
+
+		current_directory = temp_cluster;
 	}
 
 	return 0;
@@ -371,6 +375,7 @@ void write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned 
 		fwrite(buffer,size_buffer,1,obj->file);
 		fflush(obj->file);
 		file->current_cursor+=size_buffer;
+		file->file.DIR_FileSize+=size_buffer;
 	}else{
 		unsigned int before = (obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus - file->current_cursor);
 		unsigned int rest = size_buffer - before;
@@ -388,9 +393,39 @@ void write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned 
 			fseek(obj->file,obj->start_fat+(file->current_cluster-2)*sizeof(unsigned int),SEEK_SET);
 			fwrite(&next_cluster,sizeof(unsigned int),1,obj->file);
 			fflush(obj->file);
+			temp_cluster = next_cluster;
 		}
 		file->current_cluster = temp_cluster;
-		write_file_fat(obj,file,(unsigned char*)buffer+before,rest);
+		file->file.DIR_FileSize+=before;
 	}
-	
+
+}
+
+void clear_content_file_fat(fat_object* obj,internal_file* file){
+	unsigned int temp_cluster;
+	unsigned int buffer = 0xFFFFFFFF;
+	file->current_cluster = file -> start_cluster;
+	file->current_cursor = 0;
+
+	fseek(obj->file,obj->start_fat+(file->current_cluster-2)*sizeof(unsigned int),SEEK_SET);
+	fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
+	fseek(obj->file,-sizeof(unsigned int),SEEK_CUR);
+	fwrite(&buffer,sizeof(unsigned int),1,obj->file);
+	buffer = 0;
+
+	while(temp_cluster != 0 && temp_cluster != 0xFFFFFFFF){
+		if(temp_cluster < obj->fs_info.FSI_Nxt_Free)
+			obj->fs_info.FSI_Nxt_Free = temp_cluster;
+		fseek(obj->file,obj->start_fat+(temp_cluster-2)*sizeof(unsigned int),SEEK_SET);
+		fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
+		fseek(obj->file,-sizeof(unsigned int),SEEK_CUR);
+		fwrite(&buffer,sizeof(unsigned int),1,obj->file);
+	}
+
+	if(temp_cluster == 0xFFFFFFFF){
+		fseek(obj->file,obj->start_fat+(temp_cluster-2)*sizeof(unsigned int),SEEK_SET);
+		fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
+	}
+
+	file->file.DIR_FileSize = 0;
 }
