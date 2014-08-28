@@ -195,7 +195,7 @@ void close_fat(fat_object* obj){
 void flush_fat(fat_object* obj){
 	/*write BPB table*/
 	fseek(obj->file,0,SEEK_SET);
-	fwrite(&(obj->bpb),sizeof(obj->bpb),1,obj->file);
+	write_BPB(&(obj->bpb),obj->file);
 
 	/*write FSInfo*/
 	fseek(obj->file,obj->bpb.specific_per_fat_type.fat32.BPB_FSInfo*obj->bpb.BPB_ByestsPerSec,SEEK_SET);
