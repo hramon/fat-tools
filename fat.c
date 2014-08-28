@@ -5,6 +5,75 @@
 #include <string.h>
 #include <errno.h>
 
+
+void write_BPB(fat_BPB* bpb,FILE* file){
+	fwrite(bpb->BS_jmpBoot,sizeof(bpb->BS_jmpBoot),1,file);
+	fwrite(bpb->BS_OEMName,sizeof(bpb->BS_OEMName),1,file);
+	fwrite(&bpb->BPB_ByestsPerSec,sizeof(bpb->BPB_ByestsPerSec),1,file);
+	fwrite(&bpb->BPB_SecPerClus,sizeof(bpb->BPB_SecPerClus),1,file);
+	fwrite(&bpb->BPB_RsvdSecCnt,sizeof(bpb->BPB_RsvdSecCnt),1,file);
+	fwrite(&bpb->BPB_NumFATs,sizeof(bpb->BPB_NumFATs),1,file);
+	fwrite(&bpb->BPB_RootEntCnt,sizeof(bpb->BPB_RootEntCnt),1,file);
+	fwrite(&bpb->BPB_TotSec16,sizeof(bpb->BPB_TotSec16),1,file);
+	fwrite(&bpb->BPB_Media,sizeof(bpb->BPB_Media),1,file);
+	fwrite(&bpb->BPB_FATSz16,sizeof(bpb->BPB_FATSz16),1,file);
+	fwrite(&bpb->BPB_SecPerTrk,sizeof(bpb->BPB_SecPerTrk),1,file);
+	fwrite(&bpb->BPB_NumHeads,sizeof(bpb->BPB_NumHeads),1,file);
+	fwrite(&bpb->BPB_HiddSec,sizeof(bpb->BPB_HiddSec),1,file);
+	fwrite(&bpb->BPB_TotSec32,sizeof(bpb->BPB_TotSec32),1,file);
+
+	/*the next doesn't matter which part of the union we take*/
+
+	fwrite(&bpb->specific_per_fat_type.fat12_16.BS_DrvNum,sizeof(bpb->specific_per_fat_type.fat12_16.BS_DrvNum),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat12_16.BS_Reserved1,sizeof(bpb->specific_per_fat_type.fat12_16.BS_Reserved1),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat12_16.BS_BootSig,sizeof(bpb->specific_per_fat_type.fat12_16.BS_BootSig),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat12_16.BS_VolID,sizeof(bpb->specific_per_fat_type.fat12_16.BS_VolID),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat12_16.BS_VolLab[11],sizeof(bpb->specific_per_fat_type.fat12_16.BS_VolLab),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat12_16.BS_FilSysType[8],sizeof(bpb->specific_per_fat_type.fat12_16.BS_FilSysType),1,file);
+}
+
+void read_BPB(fat_BPB* bpb,FILE* file){
+	fread(bpb->BS_jmpBoot,sizeof(bpb->BS_jmpBoot),1,file);
+	fread(bpb->BS_OEMName,sizeof(bpb->BS_OEMName),1,file);
+	fread(&bpb->BPB_ByestsPerSec,sizeof(bpb->BPB_ByestsPerSec),1,file);
+	fread(&bpb->BPB_SecPerClus,sizeof(bpb->BPB_SecPerClus),1,file);
+	fread(&bpb->BPB_RsvdSecCnt,sizeof(bpb->BPB_RsvdSecCnt),1,file);
+	fread(&bpb->BPB_NumFATs,sizeof(bpb->BPB_NumFATs),1,file);
+	fread(&bpb->BPB_RootEntCnt,sizeof(bpb->BPB_RootEntCnt),1,file);
+	fread(&bpb->BPB_TotSec16,sizeof(bpb->BPB_TotSec16),1,file);
+	fread(&bpb->BPB_Media,sizeof(bpb->BPB_Media),1,file);
+	fread(&bpb->BPB_FATSz16,sizeof(bpb->BPB_FATSz16),1,file);
+	fread(&bpb->BPB_SecPerTrk,sizeof(bpb->BPB_SecPerTrk),1,file);
+	fread(&bpb->BPB_NumHeads,sizeof(bpb->BPB_NumHeads),1,file);
+	fread(&bpb->BPB_HiddSec,sizeof(bpb->BPB_HiddSec),1,file);
+	fread(&bpb->BPB_TotSec32,sizeof(bpb->BPB_TotSec32),1,file);
+
+	/*the next doesn't matter which part of the union we take*/
+
+	fread(&bpb->specific_per_fat_type.fat12_16.BS_DrvNum,sizeof(bpb->specific_per_fat_type.fat12_16.BS_DrvNum),1,file);
+	fread(&bpb->specific_per_fat_type.fat12_16.BS_Reserved1,sizeof(bpb->specific_per_fat_type.fat12_16.BS_Reserved1),1,file);
+	fread(&bpb->specific_per_fat_type.fat12_16.BS_BootSig,sizeof(bpb->specific_per_fat_type.fat12_16.BS_BootSig),1,file);
+	fread(&bpb->specific_per_fat_type.fat12_16.BS_VolID,sizeof(bpb->specific_per_fat_type.fat12_16.BS_VolID),1,file);
+	fread(&bpb->specific_per_fat_type.fat12_16.BS_VolLab[11],sizeof(bpb->specific_per_fat_type.fat12_16.BS_VolLab),1,file);
+	fread(&bpb->specific_per_fat_type.fat12_16.BS_FilSysType[8],sizeof(bpb->specific_per_fat_type.fat12_16.BS_FilSysType),1,file);
+}
+
+void write_FSInfo(fat_FSInfo* info,FILE* file){
+
+}
+
+void read_FSInfo(fat_FSInfo* info,FILE* file){
+
+}
+
+void write_Directory_Entry(fat_Directory_Entry* dir,FILE* file){
+
+}
+
+void read_Directory_Entry(fat_Directory_Entry* dir,FILE* file){
+
+}
+
 void create_fat(char* filename, fat_type type, unsigned int size){
 	/*for the moment only fat_type.FAT32 is supported*/
 
@@ -69,7 +138,8 @@ void create_fat(char* filename, fat_type type, unsigned int size){
 
 	/*write the datastructures to the file*/
 	rewind(file);
-	fwrite(&bpb,sizeof(fat_BPB),1,file);
+	write_BPB(&bpb,file);
+	//fwrite(&bpb,sizeof(fat_BPB),1,file);
 	fseek(file,bpb.specific_per_fat_type.fat32.BPB_FSInfo*DEFAULT_SECTOR_SIZE,SEEK_SET);
 	fwrite(&fs_info,sizeof(fat_FSInfo),1,file);
 	
@@ -99,7 +169,8 @@ void read_fat(fat_object* obj, char* filename){
 	obj->file = fopen((const char*)filename,"r+b");
 
 	/*read BPB table*/
-	fread(&(obj->bpb),sizeof(obj->bpb),1,obj->file);
+	//fread(&(obj->bpb),sizeof(obj->bpb),1,obj->file);
+	read_BPB(&(obj->bpb),obj->file);
 
 	/*read FSInfo*/
 	fseek(obj->file,obj->bpb.specific_per_fat_type.fat32.BPB_FSInfo*obj->bpb.BPB_ByestsPerSec,SEEK_SET);

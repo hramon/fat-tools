@@ -2,6 +2,7 @@
 #define FAT_H
 
 #include <stdio.h>
+#include <stdint.h>
 
 #define DEFAULT_SECTOR_SIZE 512
 #define DEFAULT_SECTORS_PER_CLUSTER 1
@@ -118,6 +119,15 @@ typedef struct _internal_file{
 
 #define eof(pfile) (pfile->file.DIR_FileSize<=pfile->current_total_cursor)
 
+/*Following read and write functions are to write the structs to the disk. Normal writing cannot be performed due to struct alignment*/
+void write_BPB(fat_BPB* bpb,FILE* file);
+void read_BPB(fat_BPB* bpb,FILE* file);
+void write_FSInfo(fat_FSInfo* info,FILE* file);
+void read_FSInfo(fat_FSInfo* info,FILE* file);
+void write_Directory_Entry(fat_Directory_Entry* dir,FILE* file);
+void read_Directory_Entry(fat_Directory_Entry* dir,FILE* file);
+
+/*editing the fat*/
 void create_fat(char* filename, fat_type type, unsigned int size);
 void read_fat(fat_object* obj, char* filename);
 void close_fat(fat_object* obj);

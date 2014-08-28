@@ -12,7 +12,9 @@ int main(int argc, char** argv){
 
 	copy_file_to_fat(&obj,"fat.h","/fat.h");
 
-	copy_file_from_fat(&obj,"/fat.h","test.h");
+	copy_file_from_fat(&obj,"/fat.h","test.text");
+
+	printf("%d",sizeof(struct _fat_BPB));
 
 	close_fat(&obj);
 	return 0;
