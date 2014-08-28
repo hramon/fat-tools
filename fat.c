@@ -134,6 +134,7 @@ void flush_fat(fat_object* obj){
 void copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination){
 	/*open the file to copy*/
 	internal_file* dest;
+	unsigned char buffer;
 	FILE* file = fopen((const char*)file_to_copy,"rb");
 
 
@@ -143,9 +144,7 @@ void copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination){
 	clear_content_file_fat(obj,dest);
 
 	/*write the file to the disk*/
-	while(!feof(file)){
-		unsigned char buffer;
-		fread(&buffer,sizeof(buffer),1,file);
+	while(fread(&buffer,sizeof(buffer),1,file)){
 		write_file_fat(obj,dest,&buffer,sizeof(buffer));
 	}
 
@@ -154,6 +153,28 @@ void copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination){
 	close_file_fat(obj,dest);
 
 	
+}
+
+void copy_file_from_fat(fat_object* obj,char* file_to_copy,char* destination){
+	/*open the file to copy*/
+	internal_file* source;
+	FILE* file = fopen((const char*)destination,"wb");
+
+
+	/*open source handle*/
+	source = open_file_fat(obj, file_to_copy);
+
+
+	/*write the file to the disk*/
+	while(!eof(source)){
+		unsigned char buffer;
+		read_file_fat(obj,source,&buffer,sizeof(buffer));
+		fwrite(&buffer,sizeof(buffer),1,file);
+	}
+
+
+	/*close the file*/
+	close_file_fat(obj,source);
 }
 
 internal_file* open_file_fat(fat_object* obj,char* path){
@@ -397,8 +418,36 @@ void write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned 
 		}
 		file->current_cluster = temp_cluster;
 		file->file.DIR_FileSize+=before;
+		file->current_cursor = 0;
+		write_file_fat(obj,file,((unsigned char*)buffer)+before,rest);
 	}
 
+}
+
+void read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigned int size_buffer){
+	if(file->current_total_cursor + size_buffer <= file->file.DIR_FileSize){
+		fseek(obj->file,(file->current_cluster-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus+obj->first_cluster+file->current_cursor,SEEK_SET);
+		if(size_buffer + file->current_cursor <= (unsigned int)obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus){
+			fread(buffer,size_buffer,1,obj->file);
+			fflush(obj->file);
+			file->current_cursor+=size_buffer;
+			file->current_total_cursor+=size_buffer;
+		}else{
+			unsigned int before = (obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus - file->current_cursor);
+			unsigned int rest = size_buffer - before;
+			unsigned int temp_cluster;
+		
+			fread(buffer,before,1,obj->file);
+			fseek(obj->file,obj->start_fat+(file->current_cluster-2)*sizeof(unsigned int),SEEK_SET);
+			fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
+			file->current_cursor = 0;
+			file->current_cluster = temp_cluster;
+			file->current_total_cursor+=before;
+			read_file_fat(obj,file,((unsigned char*)buffer)+before,rest);
+		}
+	}else if(!eof(file)){
+		read_file_fat(obj,file,buffer,file->file.DIR_FileSize-file->current_total_cursor);
+	}
 }
 
 void clear_content_file_fat(fat_object* obj,internal_file* file){

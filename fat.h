@@ -112,18 +112,23 @@ typedef struct _internal_file{
 	unsigned int current_cursor;
 	unsigned int current_cluster;
 	unsigned int start_directory_entry;
+	unsigned int current_total_cursor;
 	fat_Directory_Entry file;
 }internal_file;
+
+#define eof(pfile) (pfile->file.DIR_FileSize<=pfile->current_total_cursor)
 
 void create_fat(char* filename, fat_type type, unsigned int size);
 void read_fat(fat_object* obj, char* filename);
 void close_fat(fat_object* obj);
 void flush_fat(fat_object* obj);
 void copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination);
+void copy_file_from_fat(fat_object* obj,char* file_to_copy,char* destination);
 internal_file* open_file_fat(fat_object* obj,char* path);
 void remove_file_fat(fat_object* obj,char* path);
 void clear_content_file_fat(fat_object* obj,internal_file* file);
 void write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned int size_buffer);
+void read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigned int size_buffer);
 void close_file_fat(fat_object* obj,internal_file* file);
 unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_directory);
 unsigned int find_next_free_cluster(fat_object* obj);
