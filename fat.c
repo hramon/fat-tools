@@ -134,6 +134,7 @@ void create_fat(char* filename, fat_type type, unsigned int size){
 	/*for the moment only fat_type.FAT32 is supported*/
 
 	unsigned char buf = 0;
+	unsigned int buf2;
 	FILE* file;
 	unsigned int n_clusters;
 	unsigned int cluster_size;
@@ -156,10 +157,13 @@ void create_fat(char* filename, fat_type type, unsigned int size){
 
 	/*calculate the number of clusters*/
 
-	
+	bpb.BS_jmpBoot[0]=0xEB;
+	bpb.BS_jmpBoot[1]=0x58;
+	bpb.BS_jmpBoot[2]=0x90;
+	memcpy(bpb.BS_OEMName,"FATTOOL ",8);
 	bpb.BPB_ByestsPerSec = DEFAULT_SECTOR_SIZE;
 	bpb.BPB_SecPerClus = DEFAULT_SECTORS_PER_CLUSTER;
-	bpb.BPB_RsvdSecCnt = 2;/*one extra sector for the FSInfo*/
+	bpb.BPB_RsvdSecCnt = 32;/*According to specification, they use 32*/
 	bpb.BPB_NumFATs = 2;
 	bpb.BPB_RootEntCnt = 0; /*fat32 doesn't use this and it must be 0*/
 	bpb.BPB_TotSec16 = 0; /*not for fat32*/
@@ -179,10 +183,11 @@ void create_fat(char* filename, fat_type type, unsigned int size){
 	bpb.specific_per_fat_type.fat32.BPB_FSVer = 0; /*fat32 version 0:0*/
 	bpb.specific_per_fat_type.fat32.BPB_RootClus = 0x2; /*there are no clusters 0 and 1 */
 	bpb.specific_per_fat_type.fat32.BPB_FSInfo = 1;
+	bpb.specific_per_fat_type.fat32.BPB_BkBootSec = 6;
 	bpb.specific_per_fat_type.fat32.BS_BootSig = 0x29; /*from fat specification indicate that the following fields are present*/
 	bpb.specific_per_fat_type.fat32.BS_VolID = (unsigned int)time(NULL); /*take a unique volume id*/
 	memcpy(bpb.specific_per_fat_type.fat32.BS_VolLab,"FAT32TOOL  ",11);
-	memcpy(bpb.specific_per_fat_type.fat32.BS_FilSysType,"FAT     ",8);
+	memcpy(bpb.specific_per_fat_type.fat32.BS_FilSysType,"FAT32   ",8);
 
 	/*make the fs_info structure*/
 	fs_info.FSI_LeadSig = FSI_LEAD_SIGNATURE; /*signature to recognize*/
@@ -196,6 +201,8 @@ void create_fat(char* filename, fat_type type, unsigned int size){
 	rewind(file);
 	write_BPB(&bpb,file);
 	//fwrite(&bpb,sizeof(fat_BPB),1,file);
+	fseek(file,bpb.specific_per_fat_type.fat32.BPB_BkBootSec*DEFAULT_SECTOR_SIZE,SEEK_SET);
+	write_BPB(&bpb,file);
 	fseek(file,bpb.specific_per_fat_type.fat32.BPB_FSInfo*DEFAULT_SECTOR_SIZE,SEEK_SET);
 	//fwrite(&fs_info,sizeof(fat_FSInfo),1,file);
 	write_FSInfo(&fs_info,file);
@@ -211,11 +218,11 @@ void create_fat(char* filename, fat_type type, unsigned int size){
 	/*normally the root directory should already be initialized to all zeros*/
 
 	fseek(file,bpb.BPB_RsvdSecCnt*bpb.BPB_ByestsPerSec,SEEK_SET);
-	buf = 0xFF;
-	fwrite(&buf,sizeof(buf),1,file);
-	fwrite(&buf,sizeof(buf),1,file);
-	fwrite(&buf,sizeof(buf),1,file);
-	fwrite(&buf,sizeof(buf),1,file);
+	buf2 = 0x0FFFFFF8;
+	fwrite(&buf2,sizeof(buf2),1,file);
+	buf2 = 0xFFFFFFFF;
+	fwrite(&buf2,sizeof(buf2),1,file);
+	fwrite(&buf2,sizeof(buf2),1,file);
 
 	/*close the file*/
 	fclose(file);
@@ -266,8 +273,7 @@ void copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination){
 	/*open the file to copy*/
 	internal_file* dest;
 	unsigned char buffer;
-	FILE* file = fopen((const char*)file_to_copy,"rb");
-
+	FILE* file = fopen((const char*)file_to_copy,"rb");	
 
 	/*open destination handle*/
 	dest = open_file_fat(obj, destination);
@@ -291,7 +297,6 @@ void copy_file_from_fat(fat_object* obj,char* file_to_copy,char* destination){
 	internal_file* source;
 	FILE* file = fopen((const char*)destination,"wb");
 
-
 	/*open source handle*/
 	source = open_file_fat(obj, file_to_copy);
 
@@ -312,11 +317,16 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 	/*search for the folder or file*/
 	/*if the folder does not exist, quit, if the file does not exist, make it*/
 
+	int i;	
 	char* subpath;
 	unsigned int current_directory = obj->bpb.specific_per_fat_type.fat32.BPB_RootClus;
 
 	/*make the file object*/
 	internal_file* file = (internal_file*)calloc(1,sizeof(internal_file));
+
+	/*convert to upper case*/
+	for(i=0;i<strlen(path);i++)
+		path[i]=toupper(path[i]);
 
 	/*we do not need the root folder in the path, it is implied*/
 	if(path[0]=='/')
@@ -369,7 +379,7 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 		}
 
 		while(offset + i<11){
-			name[i] = ' ';
+			name[offset+i] = ' ';
 			i++;
 		}
 
@@ -392,10 +402,10 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 
 			if(!match){
 				/*find the next cluster in the directory*/
-				fseek(obj->file,obj->start_fat+(current_directory_cluster-2)*4,SEEK_SET);
+				fseek(obj->file,obj->start_fat+(current_directory_cluster)*4,SEEK_SET);
 				fread(&current_directory_cluster,sizeof(unsigned int),1,obj->file);
 				fflush(obj->file);
-				if(current_directory_cluster == 0xFFFFFFFF){
+				if(current_directory_cluster >= 0x0FFFFFF8){
 					not_found = 1;
 				}
 			}
@@ -489,9 +499,9 @@ unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_dire
 		dir+=(max-1);
 
 		/*find next cluster for this directory*/
-		fseek(obj->file,obj->start_fat+(current_directory-2)*4,SEEK_SET);
+		fseek(obj->file,obj->start_fat+(current_directory)*4,SEEK_SET);
 		fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
-		if(temp_cluster == 0xFFFFFFFF){
+		if(temp_cluster >= 0x0FFFFFF8){
 			unsigned int next_cluster = find_next_free_cluster(obj);
 			fseek(obj->file,obj->start_fat+(current_directory-2)*sizeof(unsigned int),SEEK_SET);
 			fwrite(&next_cluster,sizeof(unsigned int),1,obj->file);
@@ -507,7 +517,7 @@ unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_dire
 unsigned int find_next_free_cluster(fat_object* obj){
 	unsigned int next_free = obj->fs_info.FSI_Nxt_Free;
 	unsigned int buffer = 0xFFFFFFFF;
-	unsigned int current_fat_entry = (next_free - 2)*4 + obj->start_fat;
+	unsigned int current_fat_entry = (next_free)*4 + obj->start_fat;
 
 	fseek(obj->file,current_fat_entry,SEEK_SET);
 	fwrite(&buffer,sizeof(buffer),1,obj->file);
@@ -537,14 +547,14 @@ void write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned 
 		
 		fwrite(buffer,before,1,obj->file);
 		fflush(obj->file);
-		fseek(obj->file,obj->start_fat+(file->current_cluster-2)*sizeof(unsigned int),SEEK_SET);
+		fseek(obj->file,obj->start_fat+(file->current_cluster)*sizeof(unsigned int),SEEK_SET);
 		fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
 		fflush(obj->file);
 		file->current_cursor = 0;
-		if(temp_cluster == 0xFFFFFFFF){
+		if(temp_cluster >= 0x0FFFFFF8){
 			/*allocate new cluster*/
 			unsigned int next_cluster = find_next_free_cluster(obj);
-			fseek(obj->file,obj->start_fat+(file->current_cluster-2)*sizeof(unsigned int),SEEK_SET);
+			fseek(obj->file,obj->start_fat+(file->current_cluster)*sizeof(unsigned int),SEEK_SET);
 			fwrite(&next_cluster,sizeof(unsigned int),1,obj->file);
 			fflush(obj->file);
 			temp_cluster = next_cluster;
@@ -571,7 +581,7 @@ void read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigned in
 			unsigned int temp_cluster;
 		
 			fread(buffer,before,1,obj->file);
-			fseek(obj->file,obj->start_fat+(file->current_cluster-2)*sizeof(unsigned int),SEEK_SET);
+			fseek(obj->file,obj->start_fat+(file->current_cluster)*sizeof(unsigned int),SEEK_SET);
 			fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
 			file->current_cursor = 0;
 			file->current_cluster = temp_cluster;
@@ -589,13 +599,13 @@ void clear_content_file_fat(fat_object* obj,internal_file* file){
 	file->current_cluster = file -> start_cluster;
 	file->current_cursor = 0;
 
-	fseek(obj->file,obj->start_fat+(file->current_cluster-2)*sizeof(unsigned int),SEEK_SET);
+	fseek(obj->file,obj->start_fat+(file->current_cluster)*sizeof(unsigned int),SEEK_SET);
 	fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
 	fseek(obj->file,-sizeof(unsigned int),SEEK_CUR);
 	fwrite(&buffer,sizeof(unsigned int),1,obj->file);
 	buffer = 0;
 
-	while(temp_cluster != 0 && temp_cluster != 0xFFFFFFFF){
+	while(temp_cluster != 0 && temp_cluster < 0x0FFFFFF8){
 		if(temp_cluster < obj->fs_info.FSI_Nxt_Free)
 			obj->fs_info.FSI_Nxt_Free = temp_cluster;
 		fseek(obj->file,obj->start_fat+(temp_cluster-2)*sizeof(unsigned int),SEEK_SET);
@@ -604,7 +614,7 @@ void clear_content_file_fat(fat_object* obj,internal_file* file){
 		fwrite(&buffer,sizeof(unsigned int),1,obj->file);
 	}
 
-	if(temp_cluster == 0xFFFFFFFF){
+	if(temp_cluster >= 0x0FFFFFF8){
 		fseek(obj->file,obj->start_fat+(temp_cluster-2)*sizeof(unsigned int),SEEK_SET);
 		fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
 	}
