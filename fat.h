@@ -124,8 +124,9 @@ void write_BPB(fat_BPB* bpb,FILE* file);
 void read_BPB(fat_BPB* bpb,FILE* file);
 void write_FSInfo(fat_FSInfo* info,FILE* file);
 void read_FSInfo(fat_FSInfo* info,FILE* file);
-void write_Directory_Entry(fat_Directory_Entry* dir,FILE* file);
-void read_Directory_Entry(fat_Directory_Entry* dir,FILE* file);
+void write_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file);
+void read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file);
+
 
 /*editing the fat*/
 void create_fat(char* filename, fat_type type, unsigned int size);

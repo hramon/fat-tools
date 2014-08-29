@@ -7,14 +7,12 @@ int main(int argc, char** argv){
 	internal_file* file;
 	create_fat("test.img",FAT32,20*1024*1024);
 	read_fat(&obj,"test.img");
-	file = open_file_fat(&obj,"/test.txt");
+	/*file = open_file_fat(&obj,"/test.txt");
 	close_file_fat(&obj,file);
 
 	copy_file_to_fat(&obj,"fat.h","/fat.h");
 
-	copy_file_from_fat(&obj,"/fat.h","test.text");
-
-	printf("%d",sizeof(struct _fat_BPB));
+	copy_file_from_fat(&obj,"/fat.h","test.text");*/
 
 	close_fat(&obj);
 	return 0;

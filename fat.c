@@ -22,14 +22,19 @@ void write_BPB(fat_BPB* bpb,FILE* file){
 	fwrite(&bpb->BPB_HiddSec,sizeof(bpb->BPB_HiddSec),1,file);
 	fwrite(&bpb->BPB_TotSec32,sizeof(bpb->BPB_TotSec32),1,file);
 
-	/*the next doesn't matter which part of the union we take*/
+	/*for the moment only fat32 is supported*/
 
-	fwrite(&bpb->specific_per_fat_type.fat12_16.BS_DrvNum,sizeof(bpb->specific_per_fat_type.fat12_16.BS_DrvNum),1,file);
-	fwrite(&bpb->specific_per_fat_type.fat12_16.BS_Reserved1,sizeof(bpb->specific_per_fat_type.fat12_16.BS_Reserved1),1,file);
-	fwrite(&bpb->specific_per_fat_type.fat12_16.BS_BootSig,sizeof(bpb->specific_per_fat_type.fat12_16.BS_BootSig),1,file);
-	fwrite(&bpb->specific_per_fat_type.fat12_16.BS_VolID,sizeof(bpb->specific_per_fat_type.fat12_16.BS_VolID),1,file);
-	fwrite(&bpb->specific_per_fat_type.fat12_16.BS_VolLab[11],sizeof(bpb->specific_per_fat_type.fat12_16.BS_VolLab),1,file);
-	fwrite(&bpb->specific_per_fat_type.fat12_16.BS_FilSysType[8],sizeof(bpb->specific_per_fat_type.fat12_16.BS_FilSysType),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat32.BPB_FATSz32,sizeof(bpb->specific_per_fat_type.fat32.BPB_FATSz32),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat32.BPB_ExtFlags,sizeof(bpb->specific_per_fat_type.fat32.BPB_ExtFlags),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat32.BPB_FSVer,sizeof(bpb->specific_per_fat_type.fat32.BPB_FSVer),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat32.BPB_RootClus,sizeof(bpb->specific_per_fat_type.fat32.BPB_RootClus),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat32.BPB_FSInfo,sizeof(bpb->specific_per_fat_type.fat32.BPB_FSInfo),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat32.BPB_BkBootSec,sizeof(bpb->specific_per_fat_type.fat32.BPB_BkBootSec),1,file);
+	fwrite(bpb->specific_per_fat_type.fat32.BPB_Reserved,sizeof(bpb->specific_per_fat_type.fat32.BPB_Reserved),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat32.BS_DrvNum,sizeof(bpb->specific_per_fat_type.fat32.BS_DrvNum),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat32.BS_Reserved1,sizeof(bpb->specific_per_fat_type.fat32.BS_Reserved1),1,file);
+	fwrite(bpb->specific_per_fat_type.fat32.BS_VolLab,sizeof(bpb->specific_per_fat_type.fat32.BS_VolLab),1,file);
+	fwrite(bpb->specific_per_fat_type.fat32.BS_FilSysType,sizeof(bpb->specific_per_fat_type.fat32.BS_FilSysType),1,file);
 }
 
 void read_BPB(fat_BPB* bpb,FILE* file){
@@ -48,30 +53,80 @@ void read_BPB(fat_BPB* bpb,FILE* file){
 	fread(&bpb->BPB_HiddSec,sizeof(bpb->BPB_HiddSec),1,file);
 	fread(&bpb->BPB_TotSec32,sizeof(bpb->BPB_TotSec32),1,file);
 
-	/*the next doesn't matter which part of the union we take*/
+	/*for the moment only fat32 is supported*/
 
-	fread(&bpb->specific_per_fat_type.fat12_16.BS_DrvNum,sizeof(bpb->specific_per_fat_type.fat12_16.BS_DrvNum),1,file);
-	fread(&bpb->specific_per_fat_type.fat12_16.BS_Reserved1,sizeof(bpb->specific_per_fat_type.fat12_16.BS_Reserved1),1,file);
-	fread(&bpb->specific_per_fat_type.fat12_16.BS_BootSig,sizeof(bpb->specific_per_fat_type.fat12_16.BS_BootSig),1,file);
-	fread(&bpb->specific_per_fat_type.fat12_16.BS_VolID,sizeof(bpb->specific_per_fat_type.fat12_16.BS_VolID),1,file);
-	fread(&bpb->specific_per_fat_type.fat12_16.BS_VolLab[11],sizeof(bpb->specific_per_fat_type.fat12_16.BS_VolLab),1,file);
-	fread(&bpb->specific_per_fat_type.fat12_16.BS_FilSysType[8],sizeof(bpb->specific_per_fat_type.fat12_16.BS_FilSysType),1,file);
+	fread(&bpb->specific_per_fat_type.fat32.BPB_FATSz32,sizeof(bpb->specific_per_fat_type.fat32.BPB_FATSz32),1,file);
+	fread(&bpb->specific_per_fat_type.fat32.BPB_ExtFlags,sizeof(bpb->specific_per_fat_type.fat32.BPB_ExtFlags),1,file);
+	fread(&bpb->specific_per_fat_type.fat32.BPB_FSVer,sizeof(bpb->specific_per_fat_type.fat32.BPB_FSVer),1,file);
+	fread(&bpb->specific_per_fat_type.fat32.BPB_RootClus,sizeof(bpb->specific_per_fat_type.fat32.BPB_RootClus),1,file);
+	fread(&bpb->specific_per_fat_type.fat32.BPB_FSInfo,sizeof(bpb->specific_per_fat_type.fat32.BPB_FSInfo),1,file);
+	fread(&bpb->specific_per_fat_type.fat32.BPB_BkBootSec,sizeof(bpb->specific_per_fat_type.fat32.BPB_BkBootSec),1,file);
+	fread(bpb->specific_per_fat_type.fat32.BPB_Reserved,sizeof(bpb->specific_per_fat_type.fat32.BPB_Reserved),1,file);
+	fread(&bpb->specific_per_fat_type.fat32.BS_DrvNum,sizeof(bpb->specific_per_fat_type.fat32.BS_DrvNum),1,file);
+	fread(&bpb->specific_per_fat_type.fat32.BS_Reserved1,sizeof(bpb->specific_per_fat_type.fat32.BS_Reserved1),1,file);
+	fread(bpb->specific_per_fat_type.fat32.BS_VolLab,sizeof(bpb->specific_per_fat_type.fat32.BS_VolLab),1,file);
+	fread(bpb->specific_per_fat_type.fat32.BS_FilSysType,sizeof(bpb->specific_per_fat_type.fat32.BS_FilSysType),1,file);
 }
 
 void write_FSInfo(fat_FSInfo* info,FILE* file){
 
+	fwrite(&info->FSI_LeadSig,sizeof(info->FSI_LeadSig),1,file);
+	fwrite(info->FSI_Reserved1,sizeof(info->FSI_Reserved1),1,file);
+	fwrite(&info->FSI_StrucSig,sizeof(info->FSI_StrucSig),1,file);
+	fwrite(&info->FSI_Free_Count,sizeof(info->FSI_Free_Count),1,file);
+	fwrite(&info->FSI_Nxt_Free,sizeof(info->FSI_Nxt_Free),1,file);
+	fwrite(info->FSI_Reserved2,sizeof(info->FSI_Reserved2),1,file);
+	fwrite(&info->FSI_TrailSig,sizeof(info->FSI_TrailSig),1,file);
 }
 
 void read_FSInfo(fat_FSInfo* info,FILE* file){
 
+	fread(&info->FSI_LeadSig,sizeof(info->FSI_LeadSig),1,file);
+	fread(info->FSI_Reserved1,sizeof(info->FSI_Reserved1),1,file);
+	fread(&info->FSI_StrucSig,sizeof(info->FSI_StrucSig),1,file);
+	fread(&info->FSI_Free_Count,sizeof(info->FSI_Free_Count),1,file);
+	fread(&info->FSI_Nxt_Free,sizeof(info->FSI_Nxt_Free),1,file);
+	fread(info->FSI_Reserved2,sizeof(info->FSI_Reserved2),1,file);
+	fread(&info->FSI_TrailSig,sizeof(info->FSI_TrailSig),1,file);
 }
 
-void write_Directory_Entry(fat_Directory_Entry* dir,FILE* file){
+void write_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file){
+	int i;
 
+	for(i=0;i<n_times;i++){
+		fwrite(dir->DIR_Name,sizeof(dir->DIR_Name),1,file);
+		fwrite(&dir->DIR_attr,sizeof(dir->DIR_attr),1,file);
+		fwrite(&dir->DIR_NTRes,sizeof(dir->DIR_NTRes),1,file);
+		fwrite(&dir->DIR_CrtTimeTenth,sizeof(dir->DIR_CrtTimeTenth),1,file);
+		fwrite(&dir->DIR_CrtTime,sizeof(dir->DIR_CrtTime),1,file);
+		fwrite(&dir->DIR_CrtDate,sizeof(dir->DIR_CrtDate),1,file);
+		fwrite(&dir->DIR_LstAccDate,sizeof(dir->DIR_LstAccDate),1,file);
+		fwrite(&dir->DIR_FstClusHI,sizeof(dir->DIR_FstClusHI),1,file);
+		fwrite(&dir->DIR_WrtTime,sizeof(dir->DIR_WrtTime),1,file);
+		fwrite(&dir->DIR_WrtDate,sizeof(dir->DIR_WrtDate),1,file);
+		fwrite(&dir->DIR_FstClusLO,sizeof(dir->DIR_FstClusLO),1,file);
+		fwrite(&dir->DIR_FileSize,sizeof(dir->DIR_FileSize),1,file);
+	}
+	
 }
 
-void read_Directory_Entry(fat_Directory_Entry* dir,FILE* file){
+void read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file){
+	int i;
 
+	for(i=0;i<n_times;i++){
+		fread(dir->DIR_Name,sizeof(dir->DIR_Name),1,file);
+		fread(&dir->DIR_attr,sizeof(dir->DIR_attr),1,file);
+		fread(&dir->DIR_NTRes,sizeof(dir->DIR_NTRes),1,file);
+		fread(&dir->DIR_CrtTimeTenth,sizeof(dir->DIR_CrtTimeTenth),1,file);
+		fread(&dir->DIR_CrtTime,sizeof(dir->DIR_CrtTime),1,file);
+		fread(&dir->DIR_CrtDate,sizeof(dir->DIR_CrtDate),1,file);
+		fread(&dir->DIR_LstAccDate,sizeof(dir->DIR_LstAccDate),1,file);
+		fread(&dir->DIR_FstClusHI,sizeof(dir->DIR_FstClusHI),1,file);
+		fread(&dir->DIR_WrtTime,sizeof(dir->DIR_WrtTime),1,file);
+		fread(&dir->DIR_WrtDate,sizeof(dir->DIR_WrtDate),1,file);
+		fread(&dir->DIR_FstClusLO,sizeof(dir->DIR_FstClusLO),1,file);
+		fread(&dir->DIR_FileSize,sizeof(dir->DIR_FileSize),1,file);
+	}
 }
 
 void create_fat(char* filename, fat_type type, unsigned int size){
@@ -141,7 +196,8 @@ void create_fat(char* filename, fat_type type, unsigned int size){
 	write_BPB(&bpb,file);
 	//fwrite(&bpb,sizeof(fat_BPB),1,file);
 	fseek(file,bpb.specific_per_fat_type.fat32.BPB_FSInfo*DEFAULT_SECTOR_SIZE,SEEK_SET);
-	fwrite(&fs_info,sizeof(fat_FSInfo),1,file);
+	//fwrite(&fs_info,sizeof(fat_FSInfo),1,file);
+	write_FSInfo(&fs_info,file);
 	
 	/*add boot signature to the end of sector 0*/
 	buf = 0x55;
@@ -174,7 +230,8 @@ void read_fat(fat_object* obj, char* filename){
 
 	/*read FSInfo*/
 	fseek(obj->file,obj->bpb.specific_per_fat_type.fat32.BPB_FSInfo*obj->bpb.BPB_ByestsPerSec,SEEK_SET);
-	fread(&(obj->fs_info),sizeof(obj->fs_info),1,obj->file);
+	//fread(&(obj->fs_info),sizeof(obj->fs_info),1,obj->file);
+	read_FSInfo(&(obj->fs_info),obj->file);
 	fflush(obj->file);
 
 	/*normally check here what type of fat it is, but for now only fat32 is supported*/
@@ -195,11 +252,13 @@ void close_fat(fat_object* obj){
 void flush_fat(fat_object* obj){
 	/*write BPB table*/
 	fseek(obj->file,0,SEEK_SET);
+	//fwrite(&(obj->bpb),sizeof(obj->bpb),1,obj->file);
 	write_BPB(&(obj->bpb),obj->file);
 
 	/*write FSInfo*/
 	fseek(obj->file,obj->bpb.specific_per_fat_type.fat32.BPB_FSInfo*obj->bpb.BPB_ByestsPerSec,SEEK_SET);
-	fwrite(&(obj->fs_info),sizeof(obj->fs_info),1,obj->file);
+	//fwrite(&(obj->fs_info),sizeof(obj->fs_info),1,obj->file);
+	write_FSInfo(&(obj->fs_info),obj->file);
 }
 
 void copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination){
@@ -318,7 +377,8 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 		while(!match && !not_found){
 			/*get current directory*/
 			fseek(obj->file,obj->first_cluster+(current_directory_cluster-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus,SEEK_SET);
-			fread(directory,sizeof(fat_Directory_Entry),obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
+			//fread(directory,sizeof(fat_Directory_Entry),obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
+			read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
 			fflush(obj->file);
 
 			for(i=0;i<obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry);i++){
@@ -407,7 +467,8 @@ unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_dire
 
 		/*get current directory*/
 		fseek(obj->file,obj->first_cluster+(current_directory-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus,SEEK_SET);
-		fread(directory,sizeof(fat_Directory_Entry),obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
+		//fread(directory,sizeof(fat_Directory_Entry),obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
+		read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
 		fflush(obj->file);
 
 		for(i=0;i<max;i++){
