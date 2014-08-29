@@ -439,8 +439,11 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 				file->start_directory_entry = (current_directory-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus+new_file*sizeof(fat_Directory_Entry)+obj->first_cluster;
 
 				memcpy(file->file.DIR_Name,name,11);
-				file->file.DIR_CrtDate = (time->tm_mday | ((time->tm_mon + 1)<<4) | ((time->tm_year - 20)<<8));
-				file->file.DIR_CrtTime = (time->tm_sec/2 | (time->tm_min<<4) | (time->tm_hour<<8));
+				file->file.DIR_CrtDate = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
+				file->file.DIR_CrtTime = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
+				file->file.DIR_WrtDate = file->file.DIR_CrtDate;
+				file->file.DIR_WrtTime = file->file.DIR_CrtTime;
+				file->file.DIR_LstAccDate = file->file.DIR_CrtDate;
 				file->file.DIR_FstClusLO = first_free_cluster & 0x0000FFFF;
 				file->file.DIR_FstClusHI = first_free_cluster & 0xFFFF0000; 
 
