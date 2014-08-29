@@ -4,10 +4,10 @@
 #include <string.h>
 
 int main(int argc, char** argv){
-	char* filename = (char*)malloc((strlen("/test.txt")+1)*sizeof(char));
-	strcpy(filename,"/test.txt");
 	fat_object obj;
 	internal_file* file;
+	char* filename = (char*)malloc((strlen("/test.txt")+1)*sizeof(char));
+	strcpy(filename,"/test.txt");
 	create_fat("test.img",FAT32,20*1024*1024);
 	read_fat(&obj,"test.img");
 	file = open_file_fat(&obj,filename);
@@ -20,7 +20,7 @@ int main(int argc, char** argv){
 
 	copy_file_to_fat(&obj,"fat.h",filename);
 
-	copy_file_from_fat(&obj,filename,"test.text");
+	copy_file_from_fat(&obj,filename,"test.txt");
 
 	close_fat(&obj);
 	return 0;

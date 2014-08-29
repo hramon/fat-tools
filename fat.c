@@ -114,6 +114,7 @@ void read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* fi
 	int i;
 
 	for(i=0;i<n_times;i++){
+		dir=dir+i;
 		fread(dir->DIR_Name,sizeof(dir->DIR_Name),1,file);
 		fread(&dir->DIR_attr,sizeof(dir->DIR_attr),1,file);
 		fread(&dir->DIR_NTRes,sizeof(dir->DIR_NTRes),1,file);
