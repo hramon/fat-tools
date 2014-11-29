@@ -263,6 +263,11 @@ void flush_fat(fat_object* obj){
 	//fwrite(&(obj->bpb),sizeof(obj->bpb),1,obj->file);
 	write_BPB(&(obj->bpb),obj->file);
 
+	if(obj->bpb.specific_per_fat_type.fat32.BPB_BkBootSec!=0){
+		fseek(file,obj->bpb.specific_per_fat_type.fat32.BPB_BkBootSec*DEFAULT_SECTOR_SIZE,SEEK_SET);
+		write_BPB(&bpb,file);
+	}
+
 	/*write FSInfo*/
 	fseek(obj->file,obj->bpb.specific_per_fat_type.fat32.BPB_FSInfo*obj->bpb.BPB_ByestsPerSec,SEEK_SET);
 	//fwrite(&(obj->fs_info),sizeof(obj->fs_info),1,obj->file);
@@ -561,6 +566,7 @@ void write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned 
 			fwrite(&next_cluster,sizeof(unsigned int),1,obj->file);
 			fflush(obj->file);
 			temp_cluster = next_cluster;
+			obj->fs_info.FSI_Free_Count--;
 		}
 		file->current_cluster = temp_cluster;
 		file->file.DIR_FileSize+=before;
