@@ -33,6 +33,8 @@ void write_BPB(fat_BPB* bpb,FILE* file){
 	fwrite(bpb->specific_per_fat_type.fat32.BPB_Reserved,sizeof(bpb->specific_per_fat_type.fat32.BPB_Reserved),1,file);
 	fwrite(&bpb->specific_per_fat_type.fat32.BS_DrvNum,sizeof(bpb->specific_per_fat_type.fat32.BS_DrvNum),1,file);
 	fwrite(&bpb->specific_per_fat_type.fat32.BS_Reserved1,sizeof(bpb->specific_per_fat_type.fat32.BS_Reserved1),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat32.BS_BootSig,sizeof(bpb->specific_per_fat_type.fat32.BS_BootSig),1,file);
+	fwrite(&bpb->specific_per_fat_type.fat32.BS_VolID,sizeof(bpb->specific_per_fat_type.fat32.BS_VolID),1,file);
 	fwrite(bpb->specific_per_fat_type.fat32.BS_VolLab,sizeof(bpb->specific_per_fat_type.fat32.BS_VolLab),1,file);
 	fwrite(bpb->specific_per_fat_type.fat32.BS_FilSysType,sizeof(bpb->specific_per_fat_type.fat32.BS_FilSysType),1,file);
 }
@@ -64,6 +66,8 @@ void read_BPB(fat_BPB* bpb,FILE* file){
 	fread(bpb->specific_per_fat_type.fat32.BPB_Reserved,sizeof(bpb->specific_per_fat_type.fat32.BPB_Reserved),1,file);
 	fread(&bpb->specific_per_fat_type.fat32.BS_DrvNum,sizeof(bpb->specific_per_fat_type.fat32.BS_DrvNum),1,file);
 	fread(&bpb->specific_per_fat_type.fat32.BS_Reserved1,sizeof(bpb->specific_per_fat_type.fat32.BS_Reserved1),1,file);
+	fread(&bpb->specific_per_fat_type.fat32.BS_BootSig,sizeof(bpb->specific_per_fat_type.fat32.BS_BootSig),1,file);
+	fread(&bpb->specific_per_fat_type.fat32.BS_VolID,sizeof(bpb->specific_per_fat_type.fat32.BS_VolID),1,file);
 	fread(bpb->specific_per_fat_type.fat32.BS_VolLab,sizeof(bpb->specific_per_fat_type.fat32.BS_VolLab),1,file);
 	fread(bpb->specific_per_fat_type.fat32.BS_FilSysType,sizeof(bpb->specific_per_fat_type.fat32.BS_FilSysType),1,file);
 }
