@@ -268,8 +268,8 @@ void flush_fat(fat_object* obj){
 	write_BPB(&(obj->bpb),obj->file);
 
 	if(obj->bpb.specific_per_fat_type.fat32.BPB_BkBootSec!=0){
-		fseek(file,obj->bpb.specific_per_fat_type.fat32.BPB_BkBootSec*DEFAULT_SECTOR_SIZE,SEEK_SET);
-		write_BPB(&bpb,file);
+		fseek(obj->file,obj->bpb.specific_per_fat_type.fat32.BPB_BkBootSec*DEFAULT_SECTOR_SIZE,SEEK_SET);
+		write_BPB(&obj->bpb,obj->file);
 	}
 
 	/*write FSInfo*/
@@ -427,7 +427,7 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 				file->current_cluster = (directory[i].DIR_FstClusHI<<16)+directory[i].DIR_FstClusLO;
 				file->current_cursor = 0;
 				file->start_cluster = file->current_cluster;
-				file->start_directory_entry = i*sizeof(directory[i])+(current_directory_cluster-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus+obj->first_cluster;
+				file->start_directory_entry = i*sizeof(directory[i])+cluster_cursor(obj,current_directory_cluster);
 				free(directory);
 				return file;
 			}else{
@@ -445,7 +445,7 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 				file->current_cluster = first_free_cluster;
 				file->current_cursor = 0;
 				file->start_cluster = file->current_cluster;
-				file->start_directory_entry = (current_directory-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus+new_file*sizeof(fat_Directory_Entry)+obj->first_cluster;
+				file->start_directory_entry = cluster_cursor(obj,current_directory) + new_file*sizeof(fat_Directory_Entry);
 
 				memcpy(file->file.DIR_Name,name,11);
 				file->file.DIR_CrtDate = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
@@ -489,7 +489,7 @@ unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_dire
 		unsigned int temp_cluster;
 
 		/*get current directory*/
-		fseek(obj->file,obj->first_cluster+(current_directory-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus,SEEK_SET);
+		fseek(obj->file,cluster_cursor(obj,current_directory),SEEK_SET);
 		//fread(directory,sizeof(fat_Directory_Entry),obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
 		read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
 		fflush(obj->file);
@@ -546,7 +546,7 @@ unsigned int find_next_free_cluster(fat_object* obj){
 }
 
 void write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned int size_buffer){
-	fseek(obj->file,(file->current_cluster-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus+obj->first_cluster+file->current_cursor,SEEK_SET);
+	fseek(obj->file,cluster_cursor(obj,file->current_cluster)+file->current_cursor,SEEK_SET);
 	if(size_buffer + file->current_cursor <= (unsigned int)obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus){
 		fwrite(buffer,size_buffer,1,obj->file);
 		fflush(obj->file);
@@ -582,7 +582,7 @@ void write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned 
 
 void read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigned int size_buffer){
 	if(file->current_total_cursor + size_buffer <= file->file.DIR_FileSize){
-		fseek(obj->file,(file->current_cluster-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus+obj->first_cluster+file->current_cursor,SEEK_SET);
+		fseek(obj->file,cluster_cursor(obj,file->current_cluster)+file->current_cursor,SEEK_SET);
 		if(size_buffer + file->current_cursor <= (unsigned int)obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus){
 			fread(buffer,size_buffer,1,obj->file);
 			fflush(obj->file);
@@ -627,10 +627,10 @@ void clear_content_file_fat(fat_object* obj,internal_file* file){
 		fwrite(&buffer,sizeof(unsigned int),1,obj->file);
 	}
 
-	if(temp_cluster >= 0x0FFFFFF8){
+	/*if(temp_cluster >= 0x0FFFFFF8){
 		fseek(obj->file,obj->start_fat+(temp_cluster-2)*sizeof(unsigned int),SEEK_SET);
 		fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
-	}
+	}*/
 
 	file->file.DIR_FileSize = 0;
 }

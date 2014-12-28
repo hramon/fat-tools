@@ -127,6 +127,9 @@ void read_FSInfo(fat_FSInfo* info,FILE* file);
 void write_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file);
 void read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file);
 
+/*some defines for searching in the raw FAT structure*/
+#define cluster_cursor(obj,cluster) (obj->first_cluster+(cluster-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus)
+
 
 /*editing the fat*/
 void create_fat(char* filename, fat_type type, unsigned int size);
