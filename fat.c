@@ -323,150 +323,122 @@ void copy_file_from_fat(fat_object* obj,char* file_to_copy,char* destination){
 }
 
 internal_file* open_file_fat(fat_object* obj,char* path){
-	/*search for the folder or file*/
-	/*if the folder does not exist, quit, if the file does not exist, make it*/
+    /*search for the file*/
+    /*if the folder does not exist, quit, if the file does not exist, make it*/
 
-	int i;	
-	char* subpath;
-	unsigned int current_directory = obj->bpb.specific_per_fat_type.fat32.BPB_RootClus;
+    int i;	
+    file_path* fp = NULL;
+    unsigned int current_directory = obj->bpb.specific_per_fat_type.fat32.BPB_RootClus;
 
-	/*make the file object*/
-	internal_file* file = (internal_file*)calloc(1,sizeof(internal_file));
+    /*make the file object*/
+    internal_file* file = (internal_file*)calloc(1,sizeof(internal_file));
 
-	/*convert to upper case*/
-	for(i=0;i<strlen(path);i++)
-		path[i]=toupper(path[i]);
-
-	/*we do not need the root folder in the path, it is implied*/
-	if(path[0]=='/')
-		path++;
-
-	/*break the path by the / token*/
-	subpath = strtok(path,"/");
-	while(subpath!=NULL){
-		/*construct the correct name*/
-		char name[11];
-		unsigned int i=0;
-		int offset=0;
-		unsigned char match = 0;
-		unsigned char not_found = 0;
-
-		enum{
-			FIND_FOLDER,
-			FIND_FILE,
-			FIND_BOTH /*first match folder or file*/
-		}find_type;
-
-		fat_Directory_Entry* directory = (fat_Directory_Entry*)malloc(sizeof(fat_Directory_Entry)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus);
-		unsigned int current_directory_cluster = current_directory;
-
-		while(subpath[i]!='/'&&subpath[i]!='\0'&&offset + i<11){
-			if(subpath[i]=='.'){
-				/*fill the rest with spaces until the extentionfield*/
-				while(offset + i <8){
-					name[offset + i] = ' ';
-					offset++;
-				}
-				offset--;
-			}else{
-				name[offset + i] = subpath[i];
-			}
-
-			i++;
-		}
+    /*convert to upper case*/
+    for(i=0;i<strlen(path);i++)
+            path[i]=toupper(path[i]);
 
 
-		if(subpath[i]=='/'){
-			/*we need to find a folder*/
-			find_type = FIND_FOLDER;
-		}else if(subpath[i]=='\0'){
-			/*we need to find a file*/
-			find_type = FIND_FILE;
-		}else{
-			/*the string was to long, just keep the short one*/
-			find_type = FIND_BOTH; 
-		}
+    fp = split_path(path);
 
-		while(offset + i<11){
-			name[offset+i] = ' ';
-			i++;
-		}
+    for(i=0;i<fp->number_of_folders;i++){
+        char name[11];
+        unsigned char match = 0;
+        unsigned char not_found = 0;
+
+        enum{
+                FIND_FOLDER,
+                FIND_FILE
+        }find_type;
 
 
-		/*begin the search in current directory*/
-		while(!match && !not_found){
-			/*get current directory*/
-			fseek(obj->file,obj->first_cluster+(current_directory_cluster-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus,SEEK_SET);
-			//fread(directory,sizeof(fat_Directory_Entry),obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
-			read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
-			fflush(obj->file);
+        if(i==fp->number_of_folders-1)
+            find_type = FIND_FILE;
+        else
+            find_type = FIND_FOLDER;
 
-			for(i=0;i<obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry);i++){
-				if(memcmp(directory[i].DIR_Name,name,11)==0){
-					/*we found the folder or file*/
-					match = 1;
-					break;
-				}
-			}
+        filename_to_FAT_name(fp->folderstructure[i],name);
 
-			if(!match){
-				/*find the next cluster in the directory*/
-				fseek(obj->file,obj->start_fat+(current_directory_cluster)*4,SEEK_SET);
-				fread(&current_directory_cluster,sizeof(unsigned int),1,obj->file);
-				fflush(obj->file);
-				if(current_directory_cluster >= 0x0FFFFFF8){
-					not_found = 1;
-				}
-			}
-		}
+        fat_Directory_Entry* directory = (fat_Directory_Entry*)malloc(sizeof(fat_Directory_Entry)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus);
+        unsigned int current_directory_cluster = current_directory;
 
-		if(match){
-			if(find_type == FIND_FILE){
-				/*we can stop here*/
-				memcpy(&(file->file),&directory[i],sizeof(fat_Directory_Entry));
-				file->current_cluster = (directory[i].DIR_FstClusHI<<16)+directory[i].DIR_FstClusLO;
-				file->current_cursor = 0;
-				file->start_cluster = file->current_cluster;
-				file->start_directory_entry = i*sizeof(directory[i])+cluster_cursor(obj,current_directory_cluster);
-				free(directory);
-				return file;
-			}else{
-				current_directory = (directory[i].DIR_FstClusHI<<16)+directory[i].DIR_FstClusLO;
-			}
-		}else if(not_found){
-			if(find_type == FIND_FILE){
-				/*allocate new here*/
-				time_t t = time(NULL);
-				struct tm* time = localtime(&t);
-				unsigned int new_file = find_next_free_dir_entry(obj,current_directory);
 
-				file->current_cluster = 0;
-                                file->start_cluster = 0;
-				file->current_cursor = 0;
-				file->start_cluster = file->current_cluster;
-				file->start_directory_entry = cluster_cursor(obj,current_directory) + new_file*sizeof(fat_Directory_Entry);
 
-				memcpy(file->file.DIR_Name,name,11);
-				file->file.DIR_CrtDate = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
-				file->file.DIR_CrtTime = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
-				file->file.DIR_WrtDate = file->file.DIR_CrtDate;
-				file->file.DIR_WrtTime = file->file.DIR_CrtTime;
-				file->file.DIR_LstAccDate = file->file.DIR_CrtDate;
-                                file->file.DIR_FileSize = 0;
-                                file->file.DIR_FstClusHI = file->file.DIR_FstClusLO = 0;
+        /*begin the search in current directory*/
+        while(!match && !not_found){
+            /*get current directory*/
+            fseek(obj->file,obj->first_cluster+(current_directory_cluster-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus,SEEK_SET);
+            //fread(directory,sizeof(fat_Directory_Entry),obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
+            read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
+            fflush(obj->file);
 
-				free(directory);
-				return file;
-			}else{
-				/*we could create a new folder here*/
-				free(file);
-				free(directory);
-				return NULL;
-			}
-		}
+            for(i=0;i<obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry);i++){
+                    if(memcmp(directory[i].DIR_Name,name,11)==0){
+                            /*we found the folder or file*/
+                            match = 1;
+                            break;
+                    }
+            }
 
-		free(directory);
-	}
+            if(!match){
+                    /*find the next cluster in the directory*/
+                    fseek(obj->file,obj->start_fat+(current_directory_cluster)*4,SEEK_SET);
+                    fread(&current_directory_cluster,sizeof(unsigned int),1,obj->file);
+                    fflush(obj->file);
+                    if(current_directory_cluster >= 0x0FFFFFF8){
+                            not_found = 1;
+                    }
+            }
+        }
+
+        if(match){
+            if(find_type == FIND_FILE){
+                    /*we can stop here*/
+                    memcpy(&(file->file),&directory[i],sizeof(fat_Directory_Entry));
+                    file->current_cluster = (directory[i].DIR_FstClusHI<<16)+directory[i].DIR_FstClusLO;
+                    file->current_cursor = 0;
+                    file->start_cluster = file->current_cluster;
+                    file->start_directory_entry = i*sizeof(directory[i])+cluster_cursor(obj,current_directory_cluster);
+                    free(directory);
+                    return file;
+            }else{
+                    current_directory = (directory[i].DIR_FstClusHI<<16)+directory[i].DIR_FstClusLO;
+            }
+        }else if(not_found){
+            if(find_type == FIND_FILE){
+                    /*allocate new here*/
+                    time_t t = time(NULL);
+                    struct tm* time = localtime(&t);
+                    unsigned int new_file = find_next_free_dir_entry(obj,current_directory);
+
+                    file->current_cluster = 0;
+                    file->start_cluster = 0;
+                    file->current_cursor = 0;
+                    file->start_directory_entry = cluster_cursor(obj,current_directory) + new_file*sizeof(fat_Directory_Entry);
+
+                    memcpy(file->file.DIR_Name,name,11);
+                    file->file.DIR_CrtDate = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
+                    file->file.DIR_CrtTime = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
+                    file->file.DIR_WrtDate = file->file.DIR_CrtDate;
+                    file->file.DIR_WrtTime = file->file.DIR_CrtTime;
+                    file->file.DIR_LstAccDate = file->file.DIR_CrtDate;
+                    file->file.DIR_FileSize = 0;
+                    file->file.DIR_FstClusHI = file->file.DIR_FstClusLO = 0;
+
+                    free(directory);
+                    return file;
+            }else{
+                    /*we could create a new folder here*/
+                    free(file);
+                    free(directory);
+                    return NULL;
+            }
+        }
+
+        free(directory);
+
+    }
+    
+    return NULL;
 }
 
 void close_file_fat(fat_object* obj,internal_file* file){
@@ -697,4 +669,26 @@ file_path* split_path(char* path){
     free(subpaths);
     
     return fp;
+}
+
+void filename_to_FAT_name(char* filename, char* FAT_name){
+    char* name;
+    unsigned int i;
+    char* temp = (char*)malloc(sizeof(char)*(strlen(filename)+1));
+    
+    strcpy(temp,filename);
+    
+    for(i=0;i<11;i++){
+        FAT_name[i]=' ';
+    }
+    
+    name=strtok(temp,".");
+    memcpy(FAT_name,name,strlen(name)<=8?strlen(name):8);
+    
+    if((name=strtok(NULL,"."))!=NULL){
+        memcpy(FAT_name+8,name,strlen(name)<=3?strlen(name):3);
+    }
+    
+    free(temp);
+    
 }

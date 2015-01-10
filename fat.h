@@ -154,5 +154,6 @@ unsigned int find_next_free_cluster(fat_object* obj);
 void make_dir_fat(fat_object* obj, char* path_directory);
 file_path* split_path(char* path);
 void free_file_path(file_path* path);
+void filename_to_FAT_name(char* filename, char* FAT_name);
 
 #endif
