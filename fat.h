@@ -117,6 +117,11 @@ typedef struct _internal_file{
 	fat_Directory_Entry file;
 }internal_file;
 
+typedef struct _file_path{
+    char** folderstructure; /*folders leading to the file or end folder*/
+    unsigned int number_of_folders; /*amount of folders in the folderstructure array*/
+}file_path;
+
 #define eof(pfile) (pfile->file.DIR_FileSize<=pfile->current_total_cursor)
 
 /*Following read and write functions are to write the structs to the disk. Normal writing cannot be performed due to struct alignment*/
@@ -146,5 +151,8 @@ void read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigned in
 void close_file_fat(fat_object* obj,internal_file* file);
 unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_directory);
 unsigned int find_next_free_cluster(fat_object* obj);
+void make_dir_fat(fat_object* obj, char* path_directory);
+file_path* split_path(char* path);
+void free_file_path(file_path* path);
 
 #endif

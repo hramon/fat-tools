@@ -21,6 +21,18 @@ int main(int argc, char** argv){
 	copy_file_to_fat(&obj,"fat.h",filename);
 
 	copy_file_from_fat(&obj,filename,"test.txt");
+        
+        /*test for splitting paths*/
+        
+        {
+#define FN "/test/test2/"
+            file_path* fp;
+            free(filename);
+            filename = (char*)malloc((strlen(FN)+1)*sizeof(char));
+            strcpy(filename,FN);
+            fp=split_path(filename);
+            free_file_path(fp);
+        }
 
 	close_fat(&obj);
 	return 0;

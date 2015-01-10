@@ -642,11 +642,59 @@ void clear_content_file_fat(fat_object* obj,internal_file* file){
             fwrite(&buffer,sizeof(unsigned int),1,obj->file);
     }
 
-    /*if(temp_cluster >= 0x0FFFFFF8){
-            fseek(obj->file,obj->start_fat+(temp_cluster-2)*sizeof(unsigned int),SEEK_SET);
-            fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
-    }*/
-
     file->file.DIR_FileSize = 0;
     file->start_cluster = file->current_cluster = 0;
+}
+
+void free_file_path(file_path* path){
+    int i;
+    
+    if(path->folderstructure != NULL){
+        for(i=0;i<path->number_of_folders;i++){
+            free(path->folderstructure[i]);
+        }
+        free(path->folderstructure);
+    }
+    
+    free(path);
+}
+
+file_path* split_path(char* path){
+    
+    char* subpath;
+    char** subpaths;
+    unsigned int number_of_paths = 0;
+    unsigned int current_length = 100;
+    file_path* fp=(file_path*)malloc(sizeof(file_path));
+    subpaths = (char**)malloc(100*sizeof(char*)); /*create a dummy string array of size 100*/
+    
+    /*we do not need the root folder in the path, it is implied*/
+    if(path[0]=='/')
+            path++;
+    
+    subpath = strtok(path,"/");
+    
+    while(subpath != NULL){
+                
+        subpaths[number_of_paths] = (char*)malloc((strlen(subpath)+1)*sizeof(char));
+        strcpy(subpaths[number_of_paths],subpath);
+        number_of_paths++;
+        subpath = strtok(NULL,"/");
+        
+        if(number_of_paths==current_length){
+            current_length += 100;
+            subpaths = (char**)realloc(subpaths,current_length*sizeof(char*));
+        }
+    }
+    
+    
+    fp->number_of_folders = number_of_paths;
+    
+    fp->folderstructure = (char**)malloc(fp->number_of_folders*sizeof(char*));
+    
+    /*copy the dummy array to the real structure*/
+    memcpy(fp->folderstructure,subpaths,fp->number_of_folders*sizeof(char*));
+    free(subpaths);
+    
+    return fp;
 }
