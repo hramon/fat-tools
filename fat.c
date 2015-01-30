@@ -342,8 +342,10 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 
     for(i=0;i<fp->number_of_folders;i++){
         char name[11];
-        unsigned char match = 0;
-        unsigned char not_found = 0;
+        unsigned int index = 0;
+        unsigned char found = 0;
+		fat_Directory_Entry* directory = NULL;
+		unsigned int current_directory_cluster = 0;
 
         enum{
                 FIND_FOLDER,
@@ -358,81 +360,55 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 
         filename_to_FAT_name(fp->folderstructure[i],name);
 
-        fat_Directory_Entry* directory = (fat_Directory_Entry*)malloc(sizeof(fat_Directory_Entry)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus);
-        unsigned int current_directory_cluster = current_directory;
+        directory = (fat_Directory_Entry*)malloc(sizeof(fat_Directory_Entry)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus);
+        current_directory_cluster = current_directory;
 
+		/*search for the name in the directory*/
+		found=find_file_in_directory(obj,name,&index,&current_directory_cluster,directory);
 
-
-        /*begin the search in current directory*/
-        while(!match && !not_found){
-            /*get current directory*/
-            fseek(obj->file,obj->first_cluster+(current_directory_cluster-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus,SEEK_SET);
-            //fread(directory,sizeof(fat_Directory_Entry),obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
-            read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
-            fflush(obj->file);
-
-            for(i=0;i<obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry);i++){
-                    if(memcmp(directory[i].DIR_Name,name,11)==0){
-                            /*we found the folder or file*/
-                            match = 1;
-                            break;
-                    }
-            }
-
-            if(!match){
-                    /*find the next cluster in the directory*/
-                    fseek(obj->file,obj->start_fat+(current_directory_cluster)*4,SEEK_SET);
-                    fread(&current_directory_cluster,sizeof(unsigned int),1,obj->file);
-                    fflush(obj->file);
-                    if(current_directory_cluster >= 0x0FFFFFF8){
-                            not_found = 1;
-                    }
-            }
-        }
-
-        if(match){
-            if(find_type == FIND_FILE){
-                    /*we can stop here*/
-                    memcpy(&(file->file),&directory[i],sizeof(fat_Directory_Entry));
-                    file->current_cluster = (directory[i].DIR_FstClusHI<<16)+directory[i].DIR_FstClusLO;
-                    file->current_cursor = 0;
-                    file->start_cluster = file->current_cluster;
-                    file->start_directory_entry = i*sizeof(directory[i])+cluster_cursor(obj,current_directory_cluster);
-                    free(directory);
-                    return file;
+		if(found){
+			if(find_type == FIND_FILE){
+                /*we can stop here*/
+                memcpy(&(file->file),&directory[index],sizeof(fat_Directory_Entry));
+                file->current_cluster = (directory[index].DIR_FstClusHI<<16)+directory[index].DIR_FstClusLO;
+                file->current_cursor = 0;
+                file->start_cluster = file->current_cluster;
+                file->start_directory_entry = i*sizeof(directory[index])+cluster_cursor(obj,current_directory_cluster);
+                free(directory);
+                return file;
             }else{
-                    current_directory = (directory[i].DIR_FstClusHI<<16)+directory[i].DIR_FstClusLO;
+                current_directory = (directory[index].DIR_FstClusHI<<16)+directory[index].DIR_FstClusLO;
             }
-        }else if(not_found){
-            if(find_type == FIND_FILE){
-                    /*allocate new here*/
-                    time_t t = time(NULL);
-                    struct tm* time = localtime(&t);
-                    unsigned int new_file = find_next_free_dir_entry(obj,current_directory);
+		}else{
+			if(find_type == FIND_FILE){
+                /*allocate new here*/
+                time_t t = time(NULL);
+                struct tm* time = localtime(&t);
+                unsigned int new_file = find_next_free_dir_entry(obj,current_directory);
 
-                    file->current_cluster = 0;
-                    file->start_cluster = 0;
-                    file->current_cursor = 0;
-                    file->start_directory_entry = cluster_cursor(obj,current_directory) + new_file*sizeof(fat_Directory_Entry);
+                file->current_cluster = 0;
+                file->start_cluster = 0;
+                file->current_cursor = 0;
+                file->start_directory_entry = cluster_cursor(obj,current_directory) + new_file*sizeof(fat_Directory_Entry);
 
-                    memcpy(file->file.DIR_Name,name,11);
-                    file->file.DIR_CrtDate = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
-                    file->file.DIR_CrtTime = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
-                    file->file.DIR_WrtDate = file->file.DIR_CrtDate;
-                    file->file.DIR_WrtTime = file->file.DIR_CrtTime;
-                    file->file.DIR_LstAccDate = file->file.DIR_CrtDate;
-                    file->file.DIR_FileSize = 0;
-                    file->file.DIR_FstClusHI = file->file.DIR_FstClusLO = 0;
+                memcpy(file->file.DIR_Name,name,11);
+                file->file.DIR_CrtDate = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
+                file->file.DIR_CrtTime = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
+                file->file.DIR_WrtDate = file->file.DIR_CrtDate;
+                file->file.DIR_WrtTime = file->file.DIR_CrtTime;
+                file->file.DIR_LstAccDate = file->file.DIR_CrtDate;
+                file->file.DIR_FileSize = 0;
+                file->file.DIR_FstClusHI = file->file.DIR_FstClusLO = 0;
 
-                    free(directory);
-                    return file;
+                free(directory);
+                return file;
             }else{
-                    /*we could create a new folder here*/
-                    free(file);
-                    free(directory);
-                    return NULL;
+                /*we could create a new folder here*/
+                free(file);
+                free(directory);
+                return NULL;
             }
-        }
+		}
 
         free(directory);
 
@@ -446,6 +422,34 @@ void close_file_fat(fat_object* obj,internal_file* file){
 	fwrite(&(file->file),sizeof(file->file),1,obj->file);
 	fflush(obj->file);
 	free(file);
+}
+
+unsigned char find_file_in_directory(fat_object* obj, char name[11], unsigned int* index, unsigned int* cluster_directory,fat_Directory_Entry* directory){
+
+	unsigned int i;
+
+    while(1){
+        /*get current directory*/
+		fseek(obj->file,cluster_cursor(obj,(*cluster_directory)),SEEK_SET);
+        read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
+        fflush(obj->file);
+
+        for(i=0;i<obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry);i++){
+            if(memcmp(directory[i].DIR_Name,name,11)==0){
+                /*we found the folder or file*/
+				*index=i;
+                return 1;
+            }
+        }
+
+        /*find the next cluster in the directory*/
+        fseek(obj->file,obj->start_fat+(*cluster_directory)*4,SEEK_SET);
+        fread(cluster_directory,sizeof(unsigned int),1,obj->file);
+        fflush(obj->file);
+        if(*cluster_directory >= 0x0FFFFFF8){
+                return 0;
+        }
+    }
 }
 
 unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_directory){
@@ -589,11 +593,12 @@ void read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigned in
 
 void clear_content_file_fat(fat_object* obj,internal_file* file){
     
+	unsigned int temp_cluster;
+    unsigned int buffer = 0;
+
     if(file->file.DIR_FileSize == 0)
         return;
     
-    unsigned int temp_cluster;
-    unsigned int buffer = 0;
     file->current_cluster = file -> start_cluster;
     file->current_cursor = 0;
 
@@ -691,4 +696,10 @@ void filename_to_FAT_name(char* filename, char* FAT_name){
     
     free(temp);
     
+}
+
+void make_dir_fat(fat_object* obj,char* path_directory){
+
+	file_path* path = split_path(path_directory);
+
 }
