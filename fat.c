@@ -700,6 +700,68 @@ void filename_to_FAT_name(char* filename, char* FAT_name){
 
 void make_dir_fat(fat_object* obj,char* path_directory){
 
+	unsigned int i;
+	unsigned int index = 0;
+    unsigned char found = 0;
+	fat_Directory_Entry* directory = NULL;
+	unsigned int current_directory_cluster = 0;
+	unsigned int current_directory = obj->bpb.specific_per_fat_type.fat32.BPB_RootClus;
+
 	file_path* path = split_path(path_directory);
+
+	for(i=0;i<path->number_of_folders-1;i++){
+		char name[11];
+        
+		filename_to_FAT_name(path->folderstructure[i],name);
+
+        directory = (fat_Directory_Entry*)malloc(sizeof(fat_Directory_Entry)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus);
+		current_directory_cluster = current_directory;
+
+		/*search for the name in the directory*/
+		found=find_file_in_directory(obj,name,&index,&current_directory_cluster,directory);
+
+
+		if(found){
+			current_directory = (directory[index].DIR_FstClusHI<<16)+directory[index].DIR_FstClusLO;
+		}else{
+			/*we did not find the folder name and hence we abort*/
+			free(directory);
+			break;
+		}
+
+		free(directory);
+	}
+
+
+	if(found){
+
+		char name[11];
+		unsigned int dir
+		fat_Directory_Entry entry;
+		unsigned int first_free_cluster = 0;
+		time_t t = time(NULL);
+        struct tm* time = localtime(&t);
+        
+		filename_to_FAT_name(path->folderstructure[path->number_of_folders-1],name);
+
+		dir = find_next_free_dir_entry(obj,current_directory);
+
+		entry.DIR_attr = ATTR_DIRECTORY;
+		memcpy(&(entry.DIR_Name),name,11);
+		entry.DIR_NTRes = 0;
+		entry.DIR_CrtDate = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
+        entry.DIR_CrtTime = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
+        entry.DIR_WrtDate = file->file.DIR_CrtDate;
+        entry.DIR_WrtTime = file->file.DIR_CrtTime;
+        entry.DIR_LstAccDate = file->file.DIR_CrtDate;
+        entry.DIR_FileSize = 0;
+
+		cluster = find_next_free_cluster(obj);
+        entry.DIR_FstClusLO = first_free_cluster & 0x0000FFFF;
+        entry.DIR_FstClusHI = first_free_cluster & 0xFFFF0000; 
+		
+		fseek(obj->file,cluster_cursor(obj,current_directory) + dir*sizeof(fat_Directory_Entry),SEEK_SET);
+		write_Directory_Entry(&entry,1,obj->file);
+	}
 
 }
