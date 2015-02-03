@@ -41,6 +41,13 @@ int main(int argc, char** argv){
 
 	make_dir_fat(&obj,filename);
 
+	free(filename);
+
+	filename = (char*)malloc((strlen("/folder/main.c")+1)*sizeof(char));
+	strcpy(filename,"/folder/main.c");
+
+	copy_file_to_fat(&obj,"main.c",filename);
+
 	close_fat(&obj);
 	return 0;
 }

@@ -335,7 +335,7 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 
     /*convert to upper case*/
     for(i=0;i<strlen(path);i++)
-            path[i]=toupper(path[i]);
+		path[i]=toupper(path[i]);
 
 
     fp = split_path(path);
@@ -706,8 +706,13 @@ void make_dir_fat(fat_object* obj,char* path_directory){
 	fat_Directory_Entry* directory = NULL;
 	unsigned int current_directory_cluster = 0;
 	unsigned int current_directory = obj->bpb.specific_per_fat_type.fat32.BPB_RootClus;
+	file_path* path;
 
-	file_path* path = split_path(path_directory);
+	/*convert to upper case*/
+    for(i=0;i<strlen(path_directory);i++)
+            path_directory[i]=toupper(path_directory[i]);
+
+	path = split_path(path_directory);
 
 	for(i=0;i<path->number_of_folders-1;i++){
 		char name[11];
@@ -738,7 +743,6 @@ void make_dir_fat(fat_object* obj,char* path_directory){
 		char name[11];
 		unsigned int dir;
 		fat_Directory_Entry entry;
-		unsigned int cluster;
 		unsigned int first_free_cluster = 0;
 		time_t t = time(NULL);
         struct tm* time = localtime(&t);
@@ -757,7 +761,7 @@ void make_dir_fat(fat_object* obj,char* path_directory){
         entry.DIR_LstAccDate = entry.DIR_CrtDate;
         entry.DIR_FileSize = 0;
 
-		cluster = find_next_free_cluster(obj);
+		first_free_cluster = find_next_free_cluster(obj);
         entry.DIR_FstClusLO = first_free_cluster & 0x0000FFFF;
         entry.DIR_FstClusHI = first_free_cluster & 0xFFFF0000; 
 		
