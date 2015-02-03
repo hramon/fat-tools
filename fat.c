@@ -118,7 +118,6 @@ void read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* fi
 	int i;
 
 	for(i=0;i<n_times;i++){
-		dir=dir+i;
 		fread(dir->DIR_Name,sizeof(dir->DIR_Name),1,file);
 		fread(&dir->DIR_attr,sizeof(dir->DIR_attr),1,file);
 		fread(&dir->DIR_NTRes,sizeof(dir->DIR_NTRes),1,file);
@@ -131,6 +130,7 @@ void read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* fi
 		fread(&dir->DIR_WrtDate,sizeof(dir->DIR_WrtDate),1,file);
 		fread(&dir->DIR_FstClusLO,sizeof(dir->DIR_FstClusLO),1,file);
 		fread(&dir->DIR_FileSize,sizeof(dir->DIR_FileSize),1,file);
+		dir++;
 	}
 }
 
@@ -702,7 +702,7 @@ void make_dir_fat(fat_object* obj,char* path_directory){
 
 	unsigned int i;
 	unsigned int index = 0;
-    unsigned char found = 0;
+    unsigned char found = 1;
 	fat_Directory_Entry* directory = NULL;
 	unsigned int current_directory_cluster = 0;
 	unsigned int current_directory = obj->bpb.specific_per_fat_type.fat32.BPB_RootClus;
