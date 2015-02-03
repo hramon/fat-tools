@@ -373,7 +373,7 @@ internal_file* open_file_fat(fat_object* obj,char* path){
                 file->current_cluster = (directory[index].DIR_FstClusHI<<16)+directory[index].DIR_FstClusLO;
                 file->current_cursor = 0;
                 file->start_cluster = file->current_cluster;
-                file->start_directory_entry = i*sizeof(directory[index])+cluster_cursor(obj,current_directory_cluster);
+                file->start_directory_entry = index*sizeof(directory[index])+cluster_cursor(obj,current_directory_cluster);
                 free(directory);
                 return file;
             }else{
@@ -736,8 +736,9 @@ void make_dir_fat(fat_object* obj,char* path_directory){
 	if(found){
 
 		char name[11];
-		unsigned int dir
+		unsigned int dir;
 		fat_Directory_Entry entry;
+		unsigned int cluster;
 		unsigned int first_free_cluster = 0;
 		time_t t = time(NULL);
         struct tm* time = localtime(&t);
@@ -751,9 +752,9 @@ void make_dir_fat(fat_object* obj,char* path_directory){
 		entry.DIR_NTRes = 0;
 		entry.DIR_CrtDate = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
         entry.DIR_CrtTime = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
-        entry.DIR_WrtDate = file->file.DIR_CrtDate;
-        entry.DIR_WrtTime = file->file.DIR_CrtTime;
-        entry.DIR_LstAccDate = file->file.DIR_CrtDate;
+        entry.DIR_WrtDate = entry.DIR_CrtDate;
+        entry.DIR_WrtTime = entry.DIR_CrtTime;
+        entry.DIR_LstAccDate = entry.DIR_CrtDate;
         entry.DIR_FileSize = 0;
 
 		cluster = find_next_free_cluster(obj);
