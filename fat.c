@@ -392,8 +392,7 @@ internal_file* open_file_fat(fat_object* obj,char* path){
                 file->start_directory_entry = cluster_cursor(obj,current_directory) + new_file*sizeof(fat_Directory_Entry);
 
                 memcpy(file->file.DIR_Name,name,11);
-                file->file.DIR_CrtDate = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
-                file->file.DIR_CrtTime = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
+				date_time(&(file->file.DIR_CrtDate),&(file->file.DIR_CrtTime));
                 file->file.DIR_WrtDate = file->file.DIR_CrtDate;
                 file->file.DIR_WrtTime = file->file.DIR_CrtTime;
                 file->file.DIR_LstAccDate = file->file.DIR_CrtDate;
@@ -754,8 +753,8 @@ void make_dir_fat(fat_object* obj,char* path_directory){
 		entry.DIR_attr = ATTR_DIRECTORY;
 		memcpy(&(entry.DIR_Name),name,11);
 		entry.DIR_NTRes = 0;
-		entry.DIR_CrtDate = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
-        entry.DIR_CrtTime = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
+
+		date_time(&(entry.DIR_CrtDate),&(entry.DIR_CrtTime));
         entry.DIR_WrtDate = entry.DIR_CrtDate;
         entry.DIR_WrtTime = entry.DIR_CrtTime;
         entry.DIR_LstAccDate = entry.DIR_CrtDate;
@@ -769,4 +768,12 @@ void make_dir_fat(fat_object* obj,char* path_directory){
 		write_Directory_Entry(&entry,1,obj->file);
 	}
 
+}
+
+void date_time(unsigned short* Date,unsigned short* Time){
+	time_t t = time(NULL);
+	struct tm* time = localtime(&t);
+
+	*Date = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
+	*Time = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
 }
