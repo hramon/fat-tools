@@ -333,10 +333,6 @@ internal_file* open_file_fat(fat_object* obj,char* path){
     /*make the file object*/
     internal_file* file = (internal_file*)calloc(1,sizeof(internal_file));
 
-    /*convert to upper case*/
-    for(i=0;i<strlen(path);i++)
-		path[i]=toupper(path[i]);
-
 
     fp = split_path(path);
 
@@ -434,7 +430,7 @@ unsigned char find_file_in_directory(fat_object* obj, char name[11], unsigned in
         fflush(obj->file);
 
         for(i=0;i<obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry);i++){
-            if(memcmp(directory[i].DIR_Name,name,11)==0){
+            if(compare_fat_names(directory[i].DIR_Name,name)){
                 /*we found the folder or file*/
 				*index=i;
                 return 1;
@@ -646,7 +642,7 @@ file_path* split_path(char* path){
     
     /*we do not need the root folder in the path, it is implied*/
     if(path[0]=='/')
-            path++;
+		path++;
     
     subpath = strtok(path,"/");
     
@@ -706,10 +702,6 @@ void make_dir_fat(fat_object* obj,char* path_directory){
 	unsigned int current_directory_cluster = 0;
 	unsigned int current_directory = obj->bpb.specific_per_fat_type.fat32.BPB_RootClus;
 	file_path* path;
-
-	/*convert to upper case*/
-    for(i=0;i<strlen(path_directory);i++)
-            path_directory[i]=toupper(path_directory[i]);
 
 	path = split_path(path_directory);
 
@@ -776,4 +768,21 @@ void date_time(unsigned short* Date,unsigned short* Time){
 
 	*Date = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
 	*Time = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
+}
+
+unsigned char compare_fat_names(char name1[11],char name2[11]){
+	unsigned int i;
+
+	char name1_upper[11];
+	char name2_upper[11];
+
+	memcpy(name1_upper,name1,11);
+	memcpy(name2_upper,name2,11);
+	
+	for(i=0;i<11;i++){
+		name1_upper[i]=toupper(name1[i]);
+		name2_upper[i]=toupper(name2[i]);
+	}
+
+	return (memcmp(name1_upper,name2_upper,11)==0);
 }
