@@ -561,9 +561,13 @@ void write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned 
             file->current_cursor = 0;
             write_file_fat(obj,file,((unsigned char*)buffer)+before,rest);
     }
+
+	date_time(&(file->file.DIR_WrtDate),&(file->file.DIR_WrtTime));
+	date_time(&(file->file.DIR_LstAccDate),&(file->file.DIR_WrtTime));
 }
 
 void read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigned int size_buffer){
+	unsigned short dummy;
 	if(file->current_total_cursor + size_buffer <= file->file.DIR_FileSize){
 		fseek(obj->file,cluster_cursor(obj,file->current_cluster)+file->current_cursor,SEEK_SET);
 		if(size_buffer + file->current_cursor <= (unsigned int)obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus){
@@ -587,6 +591,8 @@ void read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigned in
 	}else if(!eof(file)){
 		read_file_fat(obj,file,buffer,file->file.DIR_FileSize-file->current_total_cursor);
 	}
+
+	date_time(&(file->file.DIR_LstAccDate),&(dummy));
 }
 
 void clear_content_file_fat(fat_object* obj,internal_file* file){
