@@ -79,6 +79,8 @@ typedef struct _fat_Directory_Entry{
 	unsigned int DIR_FileSize;
 }fat_Directory_Entry;
 
+#define SIZE_DIRECTORY_ENTRY 32
+
 #define ATTR_READ_ONLY 0x01
 #define ATTR_HIDDEN 0x02
 #define ATTR_SYSTEM 0x04

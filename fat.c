@@ -459,26 +459,26 @@ unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_dire
 	
 	while(not_found){
 		unsigned int i;
-		unsigned int max = obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry);
+		unsigned int max = obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/SIZE_DIRECTORY_ENTRY;
 		unsigned int temp_cluster;
 
 		/*get current directory*/
 		fseek(obj->file,cluster_cursor(obj,current_directory),SEEK_SET);
 		//fread(directory,sizeof(fat_Directory_Entry),obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
-		read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
+		read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/SIZE_DIRECTORY_ENTRY,obj->file);
 		fflush(obj->file);
 
 		for(i=0;i<max;i++){
 			if(directory[i].DIR_Name[0] == DIR_FREE){
 				/*take this directory*/
-				return cluster_cursor(obj,current_directory)+i*sizeof(fat_Directory_Entry);
+				return cluster_cursor(obj,current_directory)+i*SIZE_DIRECTORY_ENTRY;
 			}else if(directory[i].DIR_Name[0] == DIR_FREE_ETC){
 				/*take this directory but make the others free etc*/
 				if(i!=max-1){
 					directory[i+1].DIR_Name[0]=DIR_FREE_ETC;
 				}
 
-				return cluster_cursor(obj,current_directory)+i*sizeof(fat_Directory_Entry);
+				return cluster_cursor(obj,current_directory)+i*SIZE_DIRECTORY_ENTRY;
 			}
 		}
 
@@ -742,6 +742,7 @@ void make_dir_fat(fat_object* obj,char* path_directory){
 
 		char name[11];
 		unsigned int dir;
+		unsigned int i;
 		fat_Directory_Entry entry;
 		unsigned int first_free_cluster = 0;
 		time_t t = time(NULL);
@@ -766,6 +767,34 @@ void make_dir_fat(fat_object* obj,char* path_directory){
         entry.DIR_FstClusHI = first_free_cluster & 0xFFFF0000; 
 		
 		fseek(obj->file,dir,SEEK_SET);
+		write_Directory_Entry(&entry,1,obj->file);
+
+
+		/*make the . folder*/
+		entry.DIR_Name[0]='.';
+		for(i=1;i<11;i++){
+			entry.DIR_Name[i]=' ';
+		}
+
+		fseek(obj->file,cluster_cursor(obj,first_free_cluster),SEEK_SET);
+		write_Directory_Entry(&entry,1,obj->file);
+
+		/*make the .. folder*/
+		entry.DIR_Name[0]='.';
+		entry.DIR_Name[1]='.';
+		for(i=2;i<11;i++){
+			entry.DIR_Name[i]=' ';
+		}
+
+		if(path->number_of_folders <=2){
+			entry.DIR_FstClusLO = current_directory & 0x0000FFFF;
+			entry.DIR_FstClusHI = current_directory & 0xFFFF0000;
+		}else{
+			entry.DIR_FstClusLO = 0;
+			entry.DIR_FstClusHI = 0;
+		}
+
+		fseek(obj->file,cluster_cursor(obj,first_free_cluster)+SIZE_DIRECTORY_ENTRY,SEEK_SET);
 		write_Directory_Entry(&entry,1,obj->file);
 	}
 
