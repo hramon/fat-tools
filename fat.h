@@ -147,6 +147,7 @@ void copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination);
 void copy_file_from_fat(fat_object* obj,char* file_to_copy,char* destination);
 internal_file* open_file_fat(fat_object* obj,char* path);
 void remove_file_fat(fat_object* obj,char* path);
+void copy_file_fat(fat_object* obj,char* source,char* destination);
 void clear_content_file_fat(fat_object* obj,internal_file* file);
 void write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned int size_buffer);
 void read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigned int size_buffer);

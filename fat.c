@@ -419,7 +419,7 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 
 void close_file_fat(fat_object* obj,internal_file* file){
 	fseek(obj->file,file->start_directory_entry,SEEK_SET);
-	fwrite(&(file->file),sizeof(file->file),1,obj->file);
+	write_Directory_Entry(&(file->file),1,obj->file);
 	fflush(obj->file);
 	free(file);
 }
@@ -823,4 +823,29 @@ unsigned char compare_fat_names(char name1[11],char name2[11]){
 	}
 
 	return (memcmp(name1_upper,name2_upper,11)==0);
+}
+
+void remove_file_fat(fat_object* obj,char* path){
+	
+	internal_file* file = open_file_fat(obj,path);
+	clear_content_file_fat(obj,file);
+
+	file->file.DIR_Name[0] = DIR_FREE;
+
+	close_file_fat(obj,file);
+}
+
+void copy_file_fat(fat_object* obj,char* source,char* destination){
+
+	internal_file* source_file;
+	internal_file* destination_file;
+
+	source_file = open_file_fat(obj,source);
+	destination_file = open_file_fat(obj,destination);
+
+	clear_content_file_fat(obj,destination_file);
+	memcpy(&(destination_file->file),&(source_file->file));
+
+	close_file_fat(obj,destination_file);
+	close_file_fat(obj,source_file);
 }
