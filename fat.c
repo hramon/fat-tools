@@ -365,11 +365,11 @@ internal_file* open_file_fat(fat_object* obj,char* path){
 		if(found){
 			if(find_type == FIND_FILE){
                 /*we can stop here*/
-                memcpy(&(file->file),&directory[index],sizeof(fat_Directory_Entry));
+                memcpy(&(file->file),&directory[index]SIZE_DIRECTORY_ENTRY);
                 file->current_cluster = (directory[index].DIR_FstClusHI<<16)+directory[index].DIR_FstClusLO;
                 file->current_cursor = 0;
                 file->start_cluster = file->current_cluster;
-                file->start_directory_entry = index*sizeof(directory[index])+cluster_cursor(obj,current_directory_cluster);
+                file->start_directory_entry = index*SIZE_DIRECTORY_ENTRY+cluster_cursor(obj,current_directory_cluster);
                 free(directory);
 				free_file_path(fp);
                 return file;
@@ -431,10 +431,10 @@ unsigned char find_file_in_directory(fat_object* obj, char name[11], unsigned in
     while(1){
         /*get current directory*/
 		fseek(obj->file,cluster_cursor(obj,(*cluster_directory)),SEEK_SET);
-        read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
+        read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/SIZE_DIRECTORY_ENTRY,obj->file);
         fflush(obj->file);
 
-        for(i=0;i<obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry);i++){
+        for(i=0;i<obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/SIZE_DIRECTORY_ENTRY;i++){
             if(compare_fat_names(directory[i].DIR_Name,name)){
                 /*we found the folder or file*/
 				*index=i;
