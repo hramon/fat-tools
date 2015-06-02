@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 
-unsigned char compare_fat_names(char name1[11],char name2[11]){
+unsigned char FAT_compare_fat_names(char name1[11],char name2[11]){
 	unsigned int i;
 
 	char name1_upper[11];
@@ -21,7 +21,7 @@ unsigned char compare_fat_names(char name1[11],char name2[11]){
 	return (memcmp(name1_upper,name2_upper,11)==0);
 }
 
-void filename_to_fat_name(char* filename, char* FAT_name){
+void FAT_filename_to_fat_name(char* filename, char* FAT_name){
     char* name;
     unsigned int i;
     char* temp = (char*)malloc(sizeof(char)*(strlen(filename)+1));
@@ -43,7 +43,7 @@ void filename_to_fat_name(char* filename, char* FAT_name){
     
 }
 
-file_path* split_path(char* path){
+file_path* FAT_split_path(char* path){
     
     char* subpath;
     char** subpaths;
@@ -83,7 +83,7 @@ file_path* split_path(char* path){
     return fp;
 }
 
-void free_file_path(file_path* path){
+void FAT_free_file_path(file_path* path){
     int i;
     
     if(path->folderstructure != NULL){

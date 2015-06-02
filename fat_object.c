@@ -6,7 +6,7 @@
 #include <errno.h>
 
 
-void write_BPB(fat_BPB* bpb,FILE* file){
+void FAT_write_BPB(fat_BPB* bpb,FILE* file){
 	fwrite(bpb->BS_jmpBoot,sizeof(bpb->BS_jmpBoot),1,file);
 	fwrite(bpb->BS_OEMName,sizeof(bpb->BS_OEMName),1,file);
 	fwrite(&bpb->BPB_ByestsPerSec,sizeof(bpb->BPB_ByestsPerSec),1,file);
@@ -39,7 +39,7 @@ void write_BPB(fat_BPB* bpb,FILE* file){
 	fwrite(bpb->specific_per_fat_type.fat32.BS_FilSysType,sizeof(bpb->specific_per_fat_type.fat32.BS_FilSysType),1,file);
 }
 
-void read_BPB(fat_BPB* bpb,FILE* file){
+void FAT_read_BPB(fat_BPB* bpb,FILE* file){
 	fread(bpb->BS_jmpBoot,sizeof(bpb->BS_jmpBoot),1,file);
 	fread(bpb->BS_OEMName,sizeof(bpb->BS_OEMName),1,file);
 	fread(&bpb->BPB_ByestsPerSec,sizeof(bpb->BPB_ByestsPerSec),1,file);
@@ -72,7 +72,7 @@ void read_BPB(fat_BPB* bpb,FILE* file){
 	fread(bpb->specific_per_fat_type.fat32.BS_FilSysType,sizeof(bpb->specific_per_fat_type.fat32.BS_FilSysType),1,file);
 }
 
-void write_FSInfo(fat_FSInfo* info,FILE* file){
+void FAT_write_FSInfo(fat_FSInfo* info,FILE* file){
 
 	fwrite(&info->FSI_LeadSig,sizeof(info->FSI_LeadSig),1,file);
 	fwrite(info->FSI_Reserved1,sizeof(info->FSI_Reserved1),1,file);
@@ -83,7 +83,7 @@ void write_FSInfo(fat_FSInfo* info,FILE* file){
 	fwrite(&info->FSI_TrailSig,sizeof(info->FSI_TrailSig),1,file);
 }
 
-void read_FSInfo(fat_FSInfo* info,FILE* file){
+void FAT_read_FSInfo(fat_FSInfo* info,FILE* file){
 
 	fread(&info->FSI_LeadSig,sizeof(info->FSI_LeadSig),1,file);
 	fread(info->FSI_Reserved1,sizeof(info->FSI_Reserved1),1,file);
@@ -94,7 +94,7 @@ void read_FSInfo(fat_FSInfo* info,FILE* file){
 	fread(&info->FSI_TrailSig,sizeof(info->FSI_TrailSig),1,file);
 }
 
-void write_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file){
+void FAT_write_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file){
 	int i;
 
 	for(i=0;i<n_times;i++){
@@ -114,7 +114,7 @@ void write_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* f
 	
 }
 
-void read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file){
+void FAT_read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file){
 	int i;
 
 	for(i=0;i<n_times;i++){
@@ -134,7 +134,7 @@ void read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* fi
 	}
 }
 
-void create_fat(char* filename, fat_type type, unsigned int size){
+void FAT_create_fat(char* filename, fat_type type, unsigned int size){
 	/*for the moment only fat_type.FAT32 is supported*/
 
 	unsigned char buf = 0;
@@ -203,13 +203,13 @@ void create_fat(char* filename, fat_type type, unsigned int size){
 
 	/*write the datastructures to the file*/
 	rewind(file);
-	write_BPB(&bpb,file);
+	FAT_write_BPB(&bpb,file);
 	//fwrite(&bpb,sizeof(fat_BPB),1,file);
 	fseek(file,bpb.specific_per_fat_type.fat32.BPB_BkBootSec*DEFAULT_SECTOR_SIZE,SEEK_SET);
-	write_BPB(&bpb,file);
+	FAT_write_BPB(&bpb,file);
 	fseek(file,bpb.specific_per_fat_type.fat32.BPB_FSInfo*DEFAULT_SECTOR_SIZE,SEEK_SET);
 	//fwrite(&fs_info,sizeof(fat_FSInfo),1,file);
-	write_FSInfo(&fs_info,file);
+	FAT_write_FSInfo(&fs_info,file);
 	
 	/*add boot signature to the end of sector 0*/
 	buf = 0x55;
@@ -232,18 +232,18 @@ void create_fat(char* filename, fat_type type, unsigned int size){
 	fclose(file);
 }
 
-void read_fat(fat_object* obj, char* filename){
+void FAT_read_fat(fat_object* obj, char* filename){
 	/*open file*/
 	obj->file = fopen((const char*)filename,"r+b");
 
 	/*read BPB table*/
 	//fread(&(obj->bpb),sizeof(obj->bpb),1,obj->file);
-	read_BPB(&(obj->bpb),obj->file);
+	FAT_read_BPB(&(obj->bpb),obj->file);
 
 	/*read FSInfo*/
 	fseek(obj->file,obj->bpb.specific_per_fat_type.fat32.BPB_FSInfo*obj->bpb.BPB_ByestsPerSec,SEEK_SET);
 	//fread(&(obj->fs_info),sizeof(obj->fs_info),1,obj->file);
-	read_FSInfo(&(obj->fs_info),obj->file);
+	FAT_read_FSInfo(&(obj->fs_info),obj->file);
 	fflush(obj->file);
 
 	/*normally check here what type of fat it is, but for now only fat32 is supported*/
@@ -254,31 +254,31 @@ void read_fat(fat_object* obj, char* filename){
 	obj->first_cluster = obj->start_fat + obj->bpb.specific_per_fat_type.fat32.BPB_FATSz32*2*obj->bpb.BPB_ByestsPerSec;
 }
 
-void close_fat(fat_object* obj){
+void FAT_close_fat(fat_object* obj){
 	/*first flush the fat to the file*/
-	flush_fat(obj);
+	FAT_flush_fat(obj);
 	/*close the file handle*/
 	fclose(obj->file);
 }
 
-void flush_fat(fat_object* obj){
+void FAT_flush_fat(fat_object* obj){
 	/*write BPB table*/
 	fseek(obj->file,0,SEEK_SET);
 	//fwrite(&(obj->bpb),sizeof(obj->bpb),1,obj->file);
-	write_BPB(&(obj->bpb),obj->file);
+	FAT_write_BPB(&(obj->bpb),obj->file);
 
 	if(obj->bpb.specific_per_fat_type.fat32.BPB_BkBootSec!=0){
 		fseek(obj->file,obj->bpb.specific_per_fat_type.fat32.BPB_BkBootSec*DEFAULT_SECTOR_SIZE,SEEK_SET);
-		write_BPB(&obj->bpb,obj->file);
+		FAT_write_BPB(&obj->bpb,obj->file);
 	}
 
 	/*write FSInfo*/
 	fseek(obj->file,obj->bpb.specific_per_fat_type.fat32.BPB_FSInfo*obj->bpb.BPB_ByestsPerSec,SEEK_SET);
 	//fwrite(&(obj->fs_info),sizeof(obj->fs_info),1,obj->file);
-	write_FSInfo(&(obj->fs_info),obj->file);
+	FAT_write_FSInfo(&(obj->fs_info),obj->file);
 }
 
-unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_directory){
+unsigned int FAT_find_next_free_dir_entry(fat_object* obj, unsigned int current_directory){
 
 	unsigned char not_found = 1;
 	fat_Directory_Entry* directory = (fat_Directory_Entry*)malloc(sizeof(fat_Directory_Entry)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus);
@@ -289,22 +289,22 @@ unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_dire
 		unsigned int temp_cluster;
 
 		/*get current directory*/
-		fseek(obj->file,cluster_cursor(obj,current_directory),SEEK_SET);
+		fseek(obj->file,FAT_cluster_cursor(obj,current_directory),SEEK_SET);
 		//fread(directory,sizeof(fat_Directory_Entry),obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
-		read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/SIZE_DIRECTORY_ENTRY,obj->file);
+		FAT_read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/SIZE_DIRECTORY_ENTRY,obj->file);
 		fflush(obj->file);
 
 		for(i=0;i<max;i++){
 			if(directory[i].DIR_Name[0] == DIR_FREE){
 				/*take this directory*/
-				return cluster_cursor(obj,current_directory)+i*SIZE_DIRECTORY_ENTRY;
+				return FAT_cluster_cursor(obj,current_directory)+i*SIZE_DIRECTORY_ENTRY;
 			}else if(directory[i].DIR_Name[0] == DIR_FREE_ETC){
 				/*take this directory but make the others free etc*/
 				if(i!=max-1){
 					directory[i+1].DIR_Name[0]=DIR_FREE_ETC;
 				}
 
-				return cluster_cursor(obj,current_directory)+i*SIZE_DIRECTORY_ENTRY;
+				return FAT_cluster_cursor(obj,current_directory)+i*SIZE_DIRECTORY_ENTRY;
 			}
 		}
 
@@ -313,7 +313,7 @@ unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_dire
 		fseek(obj->file,obj->start_fat+(current_directory)*4,SEEK_SET);
 		fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
 		if(temp_cluster >= 0x0FFFFFF8){
-			unsigned int next_cluster = find_next_free_cluster(obj);
+			unsigned int next_cluster = FAT_find_next_free_cluster(obj);
 			fseek(obj->file,obj->start_fat+(current_directory-2)*sizeof(unsigned int),SEEK_SET);
 			fwrite(&next_cluster,sizeof(unsigned int),1,obj->file);
 			fflush(obj->file);
@@ -325,7 +325,7 @@ unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_dire
 	return 0;
 }
 
-unsigned int find_next_free_cluster(fat_object* obj){
+unsigned int FAT_find_next_free_cluster(fat_object* obj){
 	unsigned int next_free = obj->fs_info.FSI_Nxt_Free;
 	unsigned int buffer = 0xFFFFFFFF;
 	unsigned int current_fat_entry = (next_free)*4 + obj->start_fat;
@@ -344,7 +344,7 @@ unsigned int find_next_free_cluster(fat_object* obj){
 	return next_free;
 }
 
-void date_time(unsigned short* Date,unsigned short* Time){
+void FAT_date_time(unsigned short* Date,unsigned short* Time){
 	time_t t = time(NULL);
 	struct tm* time = localtime(&t);
 

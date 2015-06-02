@@ -8,19 +8,19 @@ int main(int argc, char** argv){
 	internal_file* file;
 	char* filename = (char*)malloc((strlen("/test.txt")+1)*sizeof(char));
 	strcpy(filename,"/test.txt");
-	create_fat("test.img",FAT32,20*1024*1024);
-	read_fat(&obj,"test.img");
+	FAT_create_fat("test.img",FAT32,20*1024*1024);
+	FAT_read_fat(&obj,"test.img");
 	file = open_file_fat(&obj,filename);
-	close_file_fat(&obj,file);
+	FAT_close_file_fat(&obj,file);
 
 	free(filename);
 
 	filename = (char*)malloc((strlen("/fat.h")+1)*sizeof(char));
 	strcpy(filename,"/fat.h");
 
-	copy_file_to_fat(&obj,"fat.h",filename);
+	FAT_copy_file_to_fat(&obj,"fat.h",filename);
 
-	copy_file_from_fat(&obj,filename,"test.txt");
+	FAT_copy_file_from_fat(&obj,filename,"test.txt");
         
         /*test for splitting paths*/
         
@@ -30,8 +30,8 @@ int main(int argc, char** argv){
             free(filename);
             filename = (char*)malloc((strlen(FN)+1)*sizeof(char));
             strcpy(filename,FN);
-            fp=split_path(filename);
-            free_file_path(fp);
+            fp=FAT_split_path(filename);
+            FAT_free_file_path(fp);
         }
 
 
@@ -39,15 +39,15 @@ int main(int argc, char** argv){
 	filename = (char*)malloc((strlen("/folder")+1)*sizeof(char));
 	strcpy(filename,"/folder");
 
-	make_directory_fat(&obj,filename);
+	FAT_make_directory_fat(&obj,filename);
 
 	free(filename);
 
 	filename = (char*)malloc((strlen("/folder/main.c")+1)*sizeof(char));
 	strcpy(filename,"/folder/main.c");
 
-	copy_file_to_fat(&obj,"main.c",filename);
+	FAT_copy_file_to_fat(&obj,"main.c",filename);
 
-	close_fat(&obj);
+	FAT_close_fat(&obj);
 	return 0;
 }

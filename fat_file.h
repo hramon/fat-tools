@@ -13,16 +13,16 @@ typedef struct _internal_file{
 }internal_file;
 
 
-#define eof(pfile) (pfile->file.DIR_FileSize<=pfile->current_total_cursor)
+#define FAT_eof(pfile) (pfile->file.DIR_FileSize<=pfile->current_total_cursor)
 
-void copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination);
-void copy_file_from_fat(fat_object* obj,char* file_to_copy,char* destination);
+void FAT_copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination);
+void FAT_copy_file_from_fat(fat_object* obj,char* file_to_copy,char* destination);
 internal_file* open_file_fat(fat_object* obj,char* path);
-void remove_file_fat(fat_object* obj,char* path);
-void copy_file_fat(fat_object* obj,char* source,char* destination);
-void clear_content_file_fat(fat_object* obj,internal_file* file);
-void write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned int size_buffer);
-void read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigned int size_buffer);
-void close_file_fat(fat_object* obj,internal_file* file);
+void FAT_remove_file_fat(fat_object* obj,char* path);
+void FAT_copy_file_fat(fat_object* obj,char* source,char* destination);
+void FAT_clear_content_file_fat(fat_object* obj,internal_file* file);
+void FAT_write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned int size_buffer);
+void FAT_read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigned int size_buffer);
+void FAT_close_file_fat(fat_object* obj,internal_file* file);
 
 #endif

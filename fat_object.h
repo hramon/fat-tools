@@ -111,24 +111,24 @@ typedef struct _fat_object{
 }fat_object;
 
 /*Following read and write functions are to write the structs to the disk. Normal writing cannot be performed due to struct alignment*/
-void write_BPB(fat_BPB* bpb,FILE* file);
-void read_BPB(fat_BPB* bpb,FILE* file);
-void write_FSInfo(fat_FSInfo* info,FILE* file);
-void read_FSInfo(fat_FSInfo* info,FILE* file);
-void write_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file);
-void read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file);
+void FAT_write_BPB(fat_BPB* bpb,FILE* file);
+void FAT_read_BPB(fat_BPB* bpb,FILE* file);
+void FAT_write_FSInfo(fat_FSInfo* info,FILE* file);
+void FAT_read_FSInfo(fat_FSInfo* info,FILE* file);
+void FAT_write_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file);
+void FAT_read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file);
 
 /*some defines for searching in the raw FAT structure*/
-#define cluster_cursor(obj,cluster) (obj->first_cluster+(cluster-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus)
+#define FAT_cluster_cursor(obj,cluster) (obj->first_cluster+(cluster-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus)
 
 
 /*editing the fat*/
-void create_fat(char* filename, fat_type type, unsigned int size);
-void read_fat(fat_object* obj, char* filename);
-void close_fat(fat_object* obj);
-void flush_fat(fat_object* obj);
-unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_directory);
-unsigned int find_next_free_cluster(fat_object* obj);
-void date_time(unsigned short* date,unsigned short* time);
+void FAT_create_fat(char* filename, fat_type type, unsigned int size);
+void FAT_read_fat(fat_object* obj, char* filename);
+void FAT_close_fat(fat_object* obj);
+void FAT_flush_fat(fat_object* obj);
+unsigned int FAT_find_next_free_dir_entry(fat_object* obj, unsigned int current_directory);
+unsigned int FAT_find_next_free_cluster(fat_object* obj);
+void FAT_date_time(unsigned short* date,unsigned short* time);
 
 #endif
