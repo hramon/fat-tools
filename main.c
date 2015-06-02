@@ -10,8 +10,8 @@ int main(int argc, char** argv){
 	strcpy(filename,"/test.txt");
 	FAT_create_fat("test.img",FAT32,20*1024*1024);
 	FAT_read_fat(&obj,"test.img");
-	file = open_file_fat(&obj,filename);
-	FAT_close_file_fat(&obj,file);
+	file = FAT_open_file(&obj,filename);
+	FAT_close_file(&obj,file);
 
 	free(filename);
 

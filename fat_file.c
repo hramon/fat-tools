@@ -3,32 +3,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void FAT_remove_file_fat(fat_object* obj,char* path){
+void FAT_remove_file(fat_object* obj,char* path){
 	
-	internal_file* file = open_file_fat(obj,path);
-	FAT_clear_content_file_fat(obj,file);
+	internal_file* file = FAT_open_file(obj,path);
+	FAT_clear_content_file(obj,file);
 
 	file->file.DIR_Name[0] = DIR_FREE;
 
-	FAT_close_file_fat(obj,file);
+	FAT_close_file(obj,file);
 }
 
-void FAT_copy_file_fat(fat_object* obj,char* source,char* destination){
+void FAT_copy_file(fat_object* obj,char* source,char* destination){
 
 	internal_file* source_file;
 	internal_file* destination_file;
 
-	source_file = open_file_fat(obj,source);
-	destination_file = open_file_fat(obj,destination);
+	source_file = FAT_open_file(obj,source);
+	destination_file = FAT_open_file(obj,destination);
 
-	FAT_clear_content_file_fat(obj,destination_file);
+	FAT_clear_content_file(obj,destination_file);
 	//memcpy(&(destination_file->file),&(source_file->file));
 
-	FAT_close_file_fat(obj,destination_file);
-	FAT_close_file_fat(obj,source_file);
+	FAT_close_file(obj,destination_file);
+	FAT_close_file(obj,source_file);
 }
 
-void FAT_clear_content_file_fat(fat_object* obj,internal_file* file){
+void FAT_clear_content_file(fat_object* obj,internal_file* file){
     
 	unsigned int temp_cluster;
     unsigned int buffer = 0;
@@ -60,7 +60,7 @@ void FAT_clear_content_file_fat(fat_object* obj,internal_file* file){
     file->start_cluster = file->current_cluster = 0;
 }
 
-void FAT_write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsigned int size_buffer){
+void FAT_write_file(fat_object* obj,internal_file* file,void * buffer, unsigned int size_buffer){
     if(file->file.DIR_FileSize == 0 && size_buffer != 0){
         /*we need to allocate a new cluster for the file*/
         int first_free_cluster = FAT_find_next_free_cluster(obj);
@@ -101,14 +101,14 @@ void FAT_write_file_fat(fat_object* obj,internal_file* file,void * buffer, unsig
             file->current_cluster = temp_cluster;
             file->file.DIR_FileSize+=before;
             file->current_cursor = 0;
-            FAT_write_file_fat(obj,file,((unsigned char*)buffer)+before,rest);
+            FAT_write_file(obj,file,((unsigned char*)buffer)+before,rest);
     }
 
 	FAT_date_time(&(file->file.DIR_WrtDate),&(file->file.DIR_WrtTime));
 	FAT_date_time(&(file->file.DIR_LstAccDate),&(file->file.DIR_WrtTime));
 }
 
-void FAT_read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigned int size_buffer){
+void FAT_read_file(fat_object* obj,internal_file* file,void* buffer, unsigned int size_buffer){
 	unsigned short dummy;
 	if(file->current_total_cursor + size_buffer <= file->file.DIR_FileSize){
 		fseek(obj->file,FAT_cluster_cursor(obj,file->current_cluster)+file->current_cursor,SEEK_SET);
@@ -128,16 +128,16 @@ void FAT_read_file_fat(fat_object* obj,internal_file* file,void* buffer, unsigne
 			file->current_cursor = 0;
 			file->current_cluster = temp_cluster;
 			file->current_total_cursor+=before;
-			FAT_read_file_fat(obj,file,((unsigned char*)buffer)+before,rest);
+			FAT_read_file(obj,file,((unsigned char*)buffer)+before,rest);
 		}
 	}else if(!FAT_eof(file)){
-		FAT_read_file_fat(obj,file,buffer,file->file.DIR_FileSize-file->current_total_cursor);
+		FAT_read_file(obj,file,buffer,file->file.DIR_FileSize-file->current_total_cursor);
 	}
 
 	FAT_date_time(&(file->file.DIR_LstAccDate),&(dummy));
 }
 
-internal_file* open_file_fat(fat_object* obj,char* path){
+internal_file* FAT_open_file(fat_object* obj,char* path){
     /*search for the file*/
     /*if the folder does not exist, quit, if the file does not exist, make it*/
 
@@ -232,7 +232,7 @@ internal_file* open_file_fat(fat_object* obj,char* path){
     return NULL;
 }
 
-void FAT_close_file_fat(fat_object* obj,internal_file* file){
+void FAT_close_file(fat_object* obj,internal_file* file){
 	fseek(obj->file,file->start_directory_entry,SEEK_SET);
 	FAT_write_Directory_Entry(&(file->file),1,obj->file);
 	fflush(obj->file);
@@ -245,19 +245,19 @@ void FAT_copy_file_from_fat(fat_object* obj,char* file_to_copy,char* destination
 	FILE* file = fopen((const char*)destination,"wb");
 
 	/*open source handle*/
-	source = open_file_fat(obj, file_to_copy);
+	source = FAT_open_file(obj, file_to_copy);
 
 
 	/*write the file to the disk*/
 	while(!FAT_eof(source)){
 		unsigned char buffer;
-		FAT_read_file_fat(obj,source,&buffer,sizeof(buffer));
+		FAT_read_file(obj,source,&buffer,sizeof(buffer));
 		fwrite(&buffer,sizeof(buffer),1,file);
 	}
 
 
 	/*close the file*/
-	FAT_close_file_fat(obj,source);
+	FAT_close_file(obj,source);
 }
 
 void FAT_copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination){
@@ -267,18 +267,18 @@ void FAT_copy_file_to_fat(fat_object* obj,char* file_to_copy,char* destination){
 	FILE* file = fopen((const char*)file_to_copy,"rb");	
 
 	/*open destination handle*/
-	dest = open_file_fat(obj, destination);
+	dest = FAT_open_file(obj, destination);
 
-	FAT_clear_content_file_fat(obj,dest);
+	FAT_clear_content_file(obj,dest);
 
 	/*write the file to the disk*/
 	while(fread(&buffer,sizeof(buffer),1,file)){
-		FAT_write_file_fat(obj,dest,&buffer,sizeof(buffer));
+		FAT_write_file(obj,dest,&buffer,sizeof(buffer));
 	}
 
 
 	/*close the file*/
-	FAT_close_file_fat(obj,dest);
+	FAT_close_file(obj,dest);
 
 	
 }
