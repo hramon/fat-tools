@@ -1,7 +1,4 @@
 #include "fat.h"
-#include "fat_file.h"
-#include "fat_path.h"
-#include "fat_directory.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
