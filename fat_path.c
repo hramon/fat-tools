@@ -21,7 +21,7 @@ unsigned char compare_fat_names(char name1[11],char name2[11]){
 	return (memcmp(name1_upper,name2_upper,11)==0);
 }
 
-void filename_to_FAT_name(char* filename, char* FAT_name){
+void filename_to_fat_name(char* filename, char* FAT_name){
     char* name;
     unsigned int i;
     char* temp = (char*)malloc(sizeof(char)*(strlen(filename)+1));

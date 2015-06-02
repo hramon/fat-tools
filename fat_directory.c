@@ -32,7 +32,7 @@ unsigned char find_file_in_directory(fat_object* obj, char name[11], unsigned in
     }
 }
 
-void make_dir_fat(fat_object* obj,char* path_directory){
+void make_directory_fat(fat_object* obj,char* path_directory){
 
 	unsigned int i;
 	unsigned int index = 0;
@@ -47,7 +47,7 @@ void make_dir_fat(fat_object* obj,char* path_directory){
 	for(i=0;i<path->number_of_folders-1;i++){
 		char name[11];
         
-		filename_to_FAT_name(path->folderstructure[i],name);
+		filename_to_fat_name(path->folderstructure[i],name);
 
         directory = (fat_Directory_Entry*)malloc(sizeof(fat_Directory_Entry)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus);
 		current_directory_cluster = current_directory;
@@ -78,7 +78,7 @@ void make_dir_fat(fat_object* obj,char* path_directory){
 		time_t t = time(NULL);
         struct tm* time = localtime(&t);
         
-		filename_to_FAT_name(path->folderstructure[path->number_of_folders-1],name);
+		filename_to_fat_name(path->folderstructure[path->number_of_folders-1],name);
 
 		dir = find_next_free_dir_entry(obj,current_directory);
 

@@ -10,7 +10,7 @@ typedef struct _file_path{
 
 file_path* split_path(char* path);
 void free_file_path(file_path* path);
-void filename_to_FAT_name(char* filename, char* FAT_name);
+void filename_to_fat_name(char* filename, char* FAT_name);
 unsigned char compare_fat_names(char name1[11],char name2[11]);
 
 

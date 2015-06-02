@@ -169,7 +169,7 @@ internal_file* open_file_fat(fat_object* obj,char* path){
         else
             find_type = FIND_FOLDER;
 
-        filename_to_FAT_name(fp->folderstructure[i],name);
+        filename_to_fat_name(fp->folderstructure[i],name);
 
         directory = (fat_Directory_Entry*)malloc(sizeof(fat_Directory_Entry)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus);
         current_directory_cluster = current_directory;
