@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include "fat_path.h"
 
 #define DEFAULT_SECTOR_SIZE 512
 #define DEFAULT_SECTORS_PER_CLUSTER 1
@@ -130,8 +129,6 @@ void close_fat(fat_object* obj);
 void flush_fat(fat_object* obj);
 unsigned int find_next_free_dir_entry(fat_object* obj, unsigned int current_directory);
 unsigned int find_next_free_cluster(fat_object* obj);
-void make_dir_fat(fat_object* obj, char* path_directory);
-unsigned char find_file_in_directory(fat_object* obj, char name[11], unsigned int* index, unsigned int* cluster_directory, unsigned int* fat_Directory_Entry); /*returns 0 if not found, 1 if found*/
 void date_time(unsigned short* date,unsigned short* time);
 
 #endif
