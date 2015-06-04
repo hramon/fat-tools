@@ -22,7 +22,13 @@ void FAT_copy_file(fat_object* obj,char* source,char* destination){
 	destination_file = FAT_open_file(obj,destination);
 
 	FAT_clear_content_file(obj,destination_file);
-	//memcpy(&(destination_file->file),&(source_file->file));
+	
+	/*write the file to the disk*/
+	while(!FAT_eof(source_file)){
+		unsigned char buffer;
+		FAT_read_file(obj,source_file,&buffer,sizeof(buffer));
+		FAT_write_file(obj,destination_file,&buffer,sizeof(buffer));
+	}
 
 	FAT_close_file(obj,destination_file);
 	FAT_close_file(obj,source_file);
