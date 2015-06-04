@@ -79,6 +79,17 @@ typedef struct _fat_Directory_Entry{
 	unsigned int DIR_FileSize;
 }fat_Directory_Entry;
 
+typedef struct _fat_Long_Name_Directory_Entry{
+	unsigned char LDIR_Ord;
+	unsigned short LDIR_Name1[5];
+	unsigned char LDIR_Attr;
+	unsigned char LDIR_Type;
+	unsigned char LDIR_Chksum;
+	unsigned short LDIR_Name2[6];
+	unsigned short LDIR_FstClusLO;
+	unsigned short LDIR_Name3[2];
+}fat_Long_Name_Directory_entry;
+
 #define SIZE_DIRECTORY_ENTRY 32
 
 #define ATTR_READ_ONLY 0x01
