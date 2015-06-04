@@ -110,6 +110,7 @@ void FAT_write_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FIL
 		fwrite(&dir->DIR_WrtDate,sizeof(dir->DIR_WrtDate),1,file);
 		fwrite(&dir->DIR_FstClusLO,sizeof(dir->DIR_FstClusLO),1,file);
 		fwrite(&dir->DIR_FileSize,sizeof(dir->DIR_FileSize),1,file);
+		dir++;
 	}
 	
 }
