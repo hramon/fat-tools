@@ -135,6 +135,33 @@ void FAT_read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE
 	}
 }
 
+void FAT_write_Long_Name_Directory_Entry(fat_Long_Name_Directory_entry* long_name,FILE* file){
+	
+	
+	fwrite(&long_name->LDIR_Ord,sizeof(long_name->LDIR_Ord),1,file);
+	fwrite(long_name->LDIR_Name1,sizeof(long_name->LDIR_Name1),1,file);
+	fwrite(&long_name->LDIR_Attr,sizeof(long_name->LDIR_Attr),1,file);
+	fwrite(&long_name->LDIR_Type,sizeof(long_name->LDIR_Type),1,file);
+	fwrite(&long_name->LDIR_Chksum,sizeof(long_name->LDIR_Chksum),1,file);
+	fwrite(long_name->LDIR_Name2,sizeof(long_name->LDIR_Name2),1,file);
+	fwrite(&long_name->LDIR_FstClusLO,sizeof(long_name->LDIR_FstClusLO),1,file);
+	fwrite(long_name->LDIR_Name3,sizeof(long_name->LDIR_Name3),1,file);
+
+}
+
+void FAT_read_Long_Name_Directory_Entry(fat_Long_Name_Directory_entry* long_name,FILE* file){
+
+	fread(&long_name->LDIR_Ord,sizeof(long_name->LDIR_Ord),1,file);
+	fread(long_name->LDIR_Name1,sizeof(long_name->LDIR_Name1),1,file);
+	fread(&long_name->LDIR_Attr,sizeof(long_name->LDIR_Attr),1,file);
+	fread(&long_name->LDIR_Type,sizeof(long_name->LDIR_Type),1,file);
+	fread(&long_name->LDIR_Chksum,sizeof(long_name->LDIR_Chksum),1,file);
+	fread(long_name->LDIR_Name2,sizeof(long_name->LDIR_Name2),1,file);
+	fread(&long_name->LDIR_FstClusLO,sizeof(long_name->LDIR_FstClusLO),1,file);
+	fread(long_name->LDIR_Name3,sizeof(long_name->LDIR_Name3),1,file);
+
+}
+
 void FAT_create_fat(char* filename, fat_type type, unsigned int size){
 	/*for the moment only fat_type.FAT32 is supported*/
 
