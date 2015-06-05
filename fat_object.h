@@ -128,6 +128,8 @@ void FAT_write_FSInfo(fat_FSInfo* info,FILE* file);
 void FAT_read_FSInfo(fat_FSInfo* info,FILE* file);
 void FAT_write_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file);
 void FAT_read_Directory_Entry(fat_Directory_Entry* dir,unsigned int n_times,FILE* file);
+void FAT_write_Long_Name_Directory_Entry(fat_Long_Name_Directory_entry* long_name,FILE* file);
+void FAT_read_Long_Name_Directory_Entry(fat_Long_Name_Directory_entry* long_name,FILE* file);
 
 /*some defines for searching in the raw FAT structure*/
 #define FAT_cluster_cursor(obj,cluster) (obj->first_cluster+(cluster-2)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus)
