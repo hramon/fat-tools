@@ -99,6 +99,8 @@ typedef struct _fat_Long_Name_Directory_Entry{
 #define ATTR_DIRECTORY 0x10
 #define ATTR_ARCHIVE 0x20
 #define ATTR_LONG_NAME (ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID)
+#define LAST_LONG_ENTRY 0x40
+#define REVERSE_LAST_LONG_ENTRY 0x3f
 
 #define DIR_FREE 0xE5
 #define DIR_FREE_ETC 0x00 /*dir free and following*/

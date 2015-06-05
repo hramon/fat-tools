@@ -129,3 +129,38 @@ void FAT_make_directory_fat(fat_object* obj,char* path_directory){
 	}
 
 }
+
+void FAT_read_directory_item(fat_object* obj,directory_item* item){
+
+	//first read as a directory entry, if it is a long name entry, convert and read the rest
+	//otherwise return
+
+	FAT_read_Directory_Entry(&item->short_name,1,obj->file);
+
+	if((item->short_name&ATTR_LONG_NAME)==ATTR_LONG_NAME){
+		item->has_long_name = 0;
+		item->long_name_entry_length = 0;
+		item->long_name = NULL;
+	}else{
+		fat_Long_Name_Directory_entry temp;
+		int i;
+		//rewind and read
+
+		fseek(obj->file,-SIZE_DIRECTORY_ENTRY,SEEK_CUR);
+		FAT_read_Long_Name_Directory_Entry(obj,&temp);
+
+		item->long_name_entry_length = temp.LDIR_Ord&REVERSE_LAST_LONG_ENTRY;
+		item->long_name = (fat_Long_Name_Directory_entry*)malloc(item->long_name_entry_length*sizeof(fat_Long_Name_Directory_entry));
+		memcpy(item->long_name,&temp,sizeof(fat_Long_Name_Directory_entry));
+
+		for(i = 1; i < item->long_name_entry_length; i++){
+			FAT_read_Long_Name_Directory_Entry(&(item->long_name[i]),obj->file);
+		}
+
+		FAT_read_Directory_Entry(&item->short_name,1,obj->file);
+	}
+}
+
+void FAT_write_directory_item(fat_object* obj,directory_item* item){
+
+}
