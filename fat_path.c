@@ -21,9 +21,10 @@ unsigned char FAT_compare_fat_names(char name1[11],char name2[11]){
 	return (memcmp(name1_upper,name2_upper,11)==0);
 }
 
-void FAT_filename_to_fat_name(char* filename, char* FAT_name){
+char FAT_filename_to_fat_name(char* filename, char* FAT_name){
     char* name;
     unsigned int i;
+	char is_longname = 0;
     char* temp = (char*)malloc(sizeof(char)*(strlen(filename)+1));
     
     strcpy(temp,filename);
@@ -33,14 +34,30 @@ void FAT_filename_to_fat_name(char* filename, char* FAT_name){
     }
     
     name=strtok(temp,".");
-    memcpy(FAT_name,name,strlen(name)<=8?strlen(name):8);
+
+	if (strlen(name) <= 8) {
+		memcpy(FAT_name, name, strlen(name));
+	}else {
+		memcpy(FAT_name, name, 7);
+		FAT_name[7] = '~';
+		is_longname = 1;
+	}
     
     if((name=strtok(NULL,"."))!=NULL){
-        memcpy(FAT_name+8,name,strlen(name)<=3?strlen(name):3);
+		if (strlen(name) <= 3) {
+			memcpy(FAT_name + 8, name, strlen(name));
+		}
+		else {
+			FAT_name[8] = name[0];
+			FAT_name[9] = name[1];
+			FAT_name[10] = '~';
+			is_longname = 1;
+		}
     }
     
     free(temp);
     
+	return is_longname;
 }
 
 file_path* FAT_split_path(char* path){

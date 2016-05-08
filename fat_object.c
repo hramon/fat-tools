@@ -306,7 +306,7 @@ void FAT_flush_fat(fat_object* obj){
 	FAT_write_FSInfo(&(obj->fs_info),obj->file);
 }
 
-unsigned int FAT_find_next_free_dir_entry(fat_object* obj, unsigned int current_directory){
+unsigned int FAT_find_next_free_dir_entry(fat_object* obj, unsigned int current_directory,unsigned int n){
 
 	unsigned char not_found = 1;
 	fat_Directory_Entry* directory = (fat_Directory_Entry*)malloc(sizeof(fat_Directory_Entry)*obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus);
@@ -315,24 +315,31 @@ unsigned int FAT_find_next_free_dir_entry(fat_object* obj, unsigned int current_
 		unsigned int i;
 		unsigned int max = obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/SIZE_DIRECTORY_ENTRY;
 		unsigned int temp_cluster;
+		unsigned int count;
+		unsigned char counting = 0;
 
 		/*get current directory*/
 		fseek(obj->file,FAT_cluster_cursor(obj,current_directory),SEEK_SET);
-		//fread(directory,sizeof(fat_Directory_Entry),obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/sizeof(fat_Directory_Entry),obj->file);
 		FAT_read_Directory_Entry(directory,obj->bpb.BPB_ByestsPerSec*obj->bpb.BPB_SecPerClus/SIZE_DIRECTORY_ENTRY,obj->file);
 		fflush(obj->file);
 
+		//directory item needs to be consecutive
+		count = 0;
 		for(i=0;i<max;i++){
-			if(directory[i].DIR_Name[0] == DIR_FREE){
-				/*take this directory*/
-				return FAT_cluster_cursor(obj,current_directory)+i*SIZE_DIRECTORY_ENTRY;
-			}else if(directory[i].DIR_Name[0] == DIR_FREE_ETC){
-				/*take this directory but make the others free etc*/
-				if(i!=max-1){
-					directory[i+1].DIR_Name[0]=DIR_FREE_ETC;
-				}
+			if(directory[i].DIR_Name[0] == DIR_FREE || directory[i].DIR_Name[0] == DIR_FREE_ETC){
+				count++;
+				counting = 1;
+				if (count == n) {
 
-				return FAT_cluster_cursor(obj,current_directory)+i*SIZE_DIRECTORY_ENTRY;
+					if (directory[i].DIR_Name[0] == DIR_FREE_ETC) {
+						/*take this directory but make the others free etc*/
+						if (i != max - 1) {
+							directory[i + 1].DIR_Name[0] = DIR_FREE_ETC;
+						}
+					}
+
+					return FAT_cluster_cursor(obj, current_directory) + (i - count + 1)*SIZE_DIRECTORY_ENTRY;
+				}
 			}
 		}
 
@@ -378,4 +385,13 @@ void FAT_date_time(unsigned short* Date,unsigned short* Time){
 
 	*Date = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
 	*Time = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
+}
+
+void FAT_clear_directory(fat_object* obj, unsigned int current_directory) {
+	fat_Directory_Entry entry;
+	fseek(obj->file, FAT_cluster_cursor(obj, current_directory), SEEK_SET);
+
+	entry.DIR_Name[0] = DIR_FREE_ETC;
+
+	FAT_write_Directory_Entry(&entry, 1, obj->file);
 }

@@ -8,7 +8,7 @@ int main(int argc, char** argv){
 	internal_file* file;
 	char* filename = (char*)malloc((strlen("/test.txt")+1)*sizeof(char));
 	strcpy(filename,"/test.txt");
-	FAT_create_fat("test.img",FAT32,20*1024*1024);
+	//FAT_create_fat("test.img",FAT32,20*1024*1024);
 	FAT_read_fat(&obj,"test.img");
 	file = FAT_open_file(&obj,filename);
 	FAT_close_file(&obj,file);

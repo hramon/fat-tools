@@ -79,7 +79,7 @@ typedef struct _fat_Directory_Entry{
 	unsigned int DIR_FileSize;
 }fat_Directory_Entry;
 
-typedef struct _fat_Long_Name_Directory_Entry{
+typedef struct _fat_Long_Name_Directory_Entry{ /*fix the character names for unicode*/
 	unsigned char LDIR_Ord;
 	unsigned short LDIR_Name1[5];
 	unsigned char LDIR_Attr;
@@ -142,7 +142,7 @@ void FAT_create_fat(char* filename, fat_type type, unsigned int size);
 void FAT_read_fat(fat_object* obj, char* filename);
 void FAT_close_fat(fat_object* obj);
 void FAT_flush_fat(fat_object* obj);
-unsigned int FAT_find_next_free_dir_entry(fat_object* obj, unsigned int current_directory);
+unsigned int FAT_find_next_free_dir_entry(fat_object* obj, unsigned int current_directory,unsigned int n);
 unsigned int FAT_find_next_free_cluster(fat_object* obj);
 void FAT_date_time(unsigned short* date,unsigned short* time);
 
