@@ -4,11 +4,15 @@
 #include <stdlib.h>
 
 void FAT_remove_file(fat_object* obj,char* path){
-	
+	int i;
 	internal_file* file = FAT_open_file(obj,path);
 	FAT_clear_content_file(obj,file);
 
 	file->file.short_name.DIR_Name[0] = DIR_FREE;
+
+	for (i = 0; i <= file->file.long_name_entry_length; i++) {
+		file->file.long_name[i].LDIR_Ord = DIR_FREE;
+	}
 
 	FAT_close_file(obj,file);
 }
