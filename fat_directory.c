@@ -219,12 +219,16 @@ void FAT_create_directory_item(directory_item* item, char* name) {
 
 	item->long_name = (fat_Long_Name_Directory_entry*)calloc(item->long_name_entry_length, sizeof(fat_Long_Name_Directory_entry));
 	temp_name = (wchar_t*)calloc(length+1, sizeof(wchar_t));
-	mbstowcs(temp_name, name, length+1);
-
+	mbstowcs(temp_name, name, length + 1);
+	length++;
 	for (i = 0; i < item->long_name_entry_length; i++) {
-		memcpy(&(item->long_name[i].LDIR_Name1), temp_name + i * 13, 5 * sizeof(wchar_t));
-		memcpy(&(item->long_name[i].LDIR_Name2), temp_name + i * 13 + 5, 6 * sizeof(wchar_t));
-		memcpy(&(item->long_name[i].LDIR_Name3), temp_name + i * 13 + 11, 2 * sizeof(wchar_t));
+
+		memcpy(&(item->long_name[i].LDIR_Name1), temp_name + i * 13, (length>= 5 ? 5:length) * sizeof(wchar_t));
+		length = length<=5?0:length-5;
+		memcpy(&(item->long_name[i].LDIR_Name2), temp_name + i * 13 + 5, (length>= 6 ? 6:length) * sizeof(wchar_t));
+		length = length<=6?0:length-6;
+		memcpy(&(item->long_name[i].LDIR_Name3), temp_name + i * 13 + 11, (length>= 2 ? 2:length) * sizeof(wchar_t));
+		length = length<=2?0:length-2;
 
 		item->long_name[i].LDIR_Attr = ATTR_LONG_NAME;
 		item->long_name[i].LDIR_Ord = i+1;
