@@ -381,10 +381,10 @@ unsigned int FAT_find_next_free_cluster(fat_object* obj){
 
 void FAT_date_time(unsigned short* Date,unsigned short* Time){
 	time_t t = time(NULL);
-	struct tm* time = localtime(&t);
+	struct tm* time_local = localtime(&t);
 
-	*Date = (time->tm_mday | ((time->tm_mon + 1)<<5) | ((time->tm_year - 80)<<9));
-	*Time = (time->tm_sec/2 | (time->tm_min<<5) | (time->tm_hour<<11));
+	*Date = (time_local->tm_mday | ((time_local->tm_mon + 1)<<5) | ((time_local->tm_year - 80)<<9));
+	*Time = (time_local->tm_sec/2 | (time_local->tm_min<<5) | (time_local->tm_hour<<11));
 }
 
 void FAT_clear_directory(fat_object* obj, unsigned int current_directory) {

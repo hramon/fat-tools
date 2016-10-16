@@ -79,8 +79,6 @@ void FAT_make_directory_fat(fat_object* obj,char* path_directory){
 		directory_item item_entry;
 		fat_Directory_Entry entry;
 		unsigned int first_free_cluster = 0;
-		time_t t = time(NULL);
-        struct tm* time = localtime(&t);
         
 		FAT_filename_to_fat_name(path->folderstructure[path->number_of_folders-1],name);
 

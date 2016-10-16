@@ -204,8 +204,6 @@ internal_file* FAT_open_file(fat_object* obj,char* path){
 		}else{
 			if(find_type == FIND_FILE){
                 /*allocate new here*/
-                time_t t = time(NULL);
-                struct tm* time = localtime(&t);
 				unsigned int new_file;
 				FAT_create_directory_item(&file->file, fp->folderstructure[i]);
 				new_file = FAT_find_next_free_dir_entry(obj, current_directory, file->file.long_name_entry_length);
