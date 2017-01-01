@@ -12,6 +12,7 @@ int multibyte_to_16bit(char16_t* dest,char* source){
 	char *ptr, *end;
     int rc;
 	mbstate_t state;
+	char16_t converted;
 
 	current_char = 0;
 	temp = (char16_t*) malloc(sizeof(char16_t)*maxlength);
@@ -20,8 +21,9 @@ int multibyte_to_16bit(char16_t* dest,char* source){
     ptr = source;
 	end = source + strlen(source);
 
-    while(rc = mbrtoc16(temp+current_char, ptr, end - ptr, &state)){   
+    while(rc = mbrtoc16(&converted, ptr, end - ptr, &state)){   
 		if(rc > 0) {
+			temp[current_char] = converted;
             ptr += rc;
 			current_char++;
         }
@@ -33,7 +35,8 @@ int multibyte_to_16bit(char16_t* dest,char* source){
 
     }
 
-	dest = (char16_t*)calloc(sizeof(char16_t),current_char+1);
+	dest = (char16_t*)calloc(current_char+1,sizeof(char16_t));
+	dest[current_char] = 0;
 	memcpy(dest,temp,sizeof(char16_t)*(current_char));
 	free(temp);
 	return current_char;
@@ -63,7 +66,7 @@ int bit16_to_multibyte(char* dest,char16_t* source){
 	}
 
 
-	dest = (char*)calloc(sizeof(char),current_char+1);
+	dest = (char*)calloc(current_char+1,sizeof(char));
 	memcpy(dest,temp,sizeof(char)*(current_char));
 	free(temp);
 	return current_char;	
