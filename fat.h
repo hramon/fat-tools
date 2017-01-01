@@ -5,5 +5,6 @@
 #include "fat_path.h"
 #include "fat_directory.h"
 #include "fat_file.h"
+#include "helpers.h"
 
 #endif

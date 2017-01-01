@@ -5,7 +5,7 @@
 #include <uchar.h>
 
 
-int multibyte_to_16bit(char16_t* dest,char* source){
+int multibyte_to_16bit(char16_t** dest,char* source){
 	char16_t* temp;
 	int current_char;
 	int maxlength = 128;
@@ -35,16 +35,15 @@ int multibyte_to_16bit(char16_t* dest,char* source){
 
     }
 
-	dest = (char16_t*)calloc(current_char+1,sizeof(char16_t));
-	dest[current_char] = 0;
-	memcpy(dest,temp,sizeof(char16_t)*(current_char));
+	*dest = (char16_t*)calloc(current_char+1,sizeof(char16_t));
+	memcpy(*dest,temp,sizeof(char16_t)*(current_char));
 	free(temp);
 	return current_char;
 
 }
 
-int bit16_to_multibyte(char* dest,char16_t* source){
-	mbstate_t state;
+int bit16_to_multibyte(char** dest,char16_t* source){
+	mbstate_t state={0};
 	int rc;
 	int maxlength = 128;
 	int current_char = 0;
@@ -56,8 +55,9 @@ int bit16_to_multibyte(char* dest,char16_t* source){
 	while(&ptr != 0){
 		rc = c16rtomb(temp+current_char,*ptr,&state);
 		current_char += rc;
+		if(*ptr == 0)
+			break;
 		ptr++;
-
 
 		if(current_char > maxlength-2){
 			maxlength += 128;
@@ -66,8 +66,8 @@ int bit16_to_multibyte(char* dest,char16_t* source){
 	}
 
 
-	dest = (char*)calloc(current_char+1,sizeof(char));
-	memcpy(dest,temp,sizeof(char)*(current_char));
+	*dest = (char*)calloc(current_char+1,sizeof(char));
+	memcpy(*dest,temp,sizeof(char)*(current_char));
 	free(temp);
 	return current_char;	
 }

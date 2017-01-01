@@ -17,12 +17,11 @@ unsigned char FAT_find_file_in_directory(fat_object* obj, char* name, unsigned i
 
 			FAT_read_directory_item(obj, item);
 
-            if(strcmp(FAT_get_directory_item_name(item),name)==0){
+            if(strcmp(FAT_get_directory_item_name(item),name)==0){ /*memory leak -> SOLVE*/
                 /*we found the folder or file*/
 				*index=i;
                 return 1;
             }
-
 			i++;
 
 			if (item->has_long_name)
@@ -180,54 +179,53 @@ void FAT_write_directory_item(fat_object* obj,directory_item* item){
 	FAT_write_Directory_Entry(&(item->short_name), 1, obj->file);
 }
 
+/*make better for all platforms. This is not cross platform and only works on windows now.*/
 char* FAT_get_directory_item_name(directory_item * item){
 	
 	int i;
 	char* fat_name;
-	wchar_t* temp_name;
+	char16_t* temp_name;
 
 
 	if (item->has_long_name) {
-		fat_name = (char*)calloc(item->long_name_entry_length * 13 * sizeof(wchar_t) + 1, sizeof(char));
-		fat_name[item->long_name_entry_length * 13 * sizeof(wchar_t)] = '\0'; /*make sure it is null terminated*/
 
-		temp_name = (wchar_t*)calloc(item->long_name_entry_length * 13 + 1, sizeof(wchar_t));
+		temp_name = (char16_t*)calloc(item->long_name_entry_length * 13 + 1, sizeof(char16_t));
 		temp_name[item->long_name_entry_length * 13] = 0; /*make sure it is null terminated*/
 
 		for (i = 0; i < item->long_name_entry_length; i++) {
-			memcpy(temp_name + i * 13, &(item->long_name[i].LDIR_Name1), 5 * sizeof(wchar_t));
-			memcpy(temp_name + i * 13 + 5, &(item->long_name[i].LDIR_Name2), 6 * sizeof(wchar_t));
-			memcpy(temp_name + i * 13 + 11, &(item->long_name[i].LDIR_Name3), 2 * sizeof(wchar_t));
+			memcpy(temp_name + i * 13, &(item->long_name[i].LDIR_Name1), 5 * sizeof(char16_t));
+			memcpy(temp_name + i * 13 + 5, &(item->long_name[i].LDIR_Name2), 6 * sizeof(char16_t));
+			memcpy(temp_name + i * 13 + 11, &(item->long_name[i].LDIR_Name3), 2 * sizeof(char16_t));
 		}
 
-		wcstombs(fat_name, temp_name, item->long_name_entry_length * 13 * sizeof(wchar_t) + 1);
+		bit16_to_multibyte(&fat_name, temp_name);
+		free(temp_name);
 
 	} else {
 		fat_name = (char*)calloc(12, sizeof(char));
 		memcpy(fat_name, &(item->short_name.DIR_Name), 11);
 	}
-	
+
 	return fat_name;
 }
 
 void FAT_create_directory_item(directory_item* item, char* name) {
 	int i;
-	wchar_t* temp_name;
-	int length = mbstowcs(NULL,name,strlen(name));
+	char16_t* temp_name;
+	int length = multibyte_to_16bit(&temp_name,name);
 	item->long_name_entry_length = length / 13 + 1;
 	item->has_long_name = 1;
 
 	item->long_name = (fat_Long_Name_Directory_entry*)calloc(item->long_name_entry_length, sizeof(fat_Long_Name_Directory_entry));
-	temp_name = (wchar_t*)calloc(length+1, sizeof(wchar_t));
-	mbstowcs(temp_name, name, length + 1);
 	length++;
+
 	for (i = 0; i < item->long_name_entry_length; i++) {
 
-		memcpy(&(item->long_name[i].LDIR_Name1), temp_name + i * 13, (length>= 5 ? 5:length) * sizeof(wchar_t));
+		memcpy(&(item->long_name[i].LDIR_Name1), temp_name + i * 13, (length>= 5 ? 5:length) * sizeof(char16_t));
 		length = length<=5?0:length-5;
-		memcpy(&(item->long_name[i].LDIR_Name2), temp_name + i * 13 + 5, (length>= 6 ? 6:length) * sizeof(wchar_t));
+		memcpy(&(item->long_name[i].LDIR_Name2), temp_name + i * 13 + 5, (length>= 6 ? 6:length) * sizeof(char16_t));
 		length = length<=6?0:length-6;
-		memcpy(&(item->long_name[i].LDIR_Name3), temp_name + i * 13 + 11, (length>= 2 ? 2:length) * sizeof(wchar_t));
+		memcpy(&(item->long_name[i].LDIR_Name3), temp_name + i * 13 + 11, (length>= 2 ? 2:length) * sizeof(char16_t));
 		length = length<=2?0:length-2;
 
 		item->long_name[i].LDIR_Attr = ATTR_LONG_NAME;

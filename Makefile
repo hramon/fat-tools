@@ -1,7 +1,7 @@
 CC = gcc
 LINK = ld
 flags = -g
-files = main.c fat_object.c fat_path.c fat_file.c fat_directory.c
+files = main.c fat_object.c fat_path.c fat_file.c fat_directory.c helpers.c
 
 all: fattools
 clean:
