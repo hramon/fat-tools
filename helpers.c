@@ -4,72 +4,66 @@
 #include <string.h>
 #include <uchar.h>
 
+/*mbrtoc16 cannot be used because Windows doesn't properly check the locale of the multibyte input*/
+int multibyte_to_16bit(char16_t** dest,const char* source){
 
-int multibyte_to_16bit(char16_t** dest,char* source){
-	char16_t* temp;
-	int current_char;
-	int maxlength = 128;
-	char *ptr, *end;
-    int rc;
-	mbstate_t state;
-	char16_t converted;
+	wchar_t* temp_name;
+	int length = mbstowcs(NULL,source, strlen(source));
 
-	current_char = 0;
-	temp = (char16_t*) malloc(sizeof(char16_t)*maxlength);
+	temp_name = (wchar_t*)malloc((length + 1)*sizeof(wchar_t));
+	mbstowcs(temp_name, source, length + 1);
 
-	char16_t c16;
-    ptr = source;
-	end = source + strlen(source);
-
-    while(rc = mbrtoc16(&converted, ptr, end - ptr, &state)){   
-		if(rc > 0) {
-			temp[current_char] = converted;
-            ptr += rc;
-			current_char++;
-        }
-
-		if(current_char == maxlength){
-			maxlength += 128;
-			temp = (char16_t*)realloc(temp,sizeof(char16_t)*maxlength);
+	/*Windows assigns a length of 2 to whchar_t and other operating systems typically 4*/
+	if (sizeof(wchar_t) == 4) {
+		int i;
+		*dest = (char16_t*)calloc(length + 1, sizeof(char16_t));
+		for (i = 0; i < length; i++) {
+			/*cast to 2 bytes, throw away the other bytes since longer characters are not supported by FAT*/
+			(*dest)[i] = (char16_t)temp_name[i];
 		}
 
-    }
-
-	*dest = (char16_t*)calloc(current_char+1,sizeof(char16_t));
-	memcpy(*dest,temp,sizeof(char16_t)*(current_char));
-	free(temp);
-	return current_char;
-
-}
-
-int bit16_to_multibyte(char** dest,char16_t* source){
-	mbstate_t state={0};
-	int rc;
-	int maxlength = 128;
-	int current_char = 0;
-	char* temp;
-	char16_t* ptr = source;
-
-	temp = (char*) malloc(sizeof(char)*maxlength);
-
-	while(&ptr != 0){
-		rc = c16rtomb(temp+current_char,*ptr,&state);
-		current_char += rc;
-		if(*ptr == 0)
-			break;
-		ptr++;
-
-		if(current_char > maxlength-2){
-			maxlength += 128;
-			temp = (char*)realloc(temp,sizeof(char)*maxlength);
-		}
+		free(temp_name);
+	}
+	else {
+		/*the name is already in the correct format*/
+		*dest = temp_name;
 	}
 
+	return length;
+}
 
-	*dest = (char*)calloc(current_char+1,sizeof(char));
-	memcpy(*dest,temp,sizeof(char)*(current_char));
-	free(temp);
-	return current_char;	
+/*c16rtomb is not used because mbrtoc16 wasn't used and to prevent unpredictable outcomes. char16_t is manually converted to wchar_t irrespective of the platform implementation of wchar_t*/
+int bit16_to_multibyte(char** dest,const char16_t* source){
+
+#define MAXLENGTH 128
+
+	int length;
+	wchar_t* temp_name;
+
+	int i;
+	temp_name = (wchar_t*)malloc(sizeof(wchar_t*)*MAXLENGTH);
+
+	i = 0;
+
+	while (source[i] != 0) {
+		if (i%MAXLENGTH == 0 && i != 0) {
+			temp_name = (wchar_t*)malloc(sizeof(wchar_t*)*(i/MAXLENGTH+1)*MAXLENGTH);
+		}
+
+		temp_name[i] = (wchar_t)source[i];
+		i++;
+	}
+
+	temp_name[i] = 0;
+
+	length = wcstombs(NULL, (const wchar_t*)temp_name,i*2);
+	*dest = (char*)malloc((length + 1)*sizeof(char));
+	wcstombs(*dest, (const wchar_t*)temp_name,length + 1);
+
+	free(temp_name);
+
+	return length;
+
 }
 
 
