@@ -171,8 +171,8 @@ void FAT_write_directory_item(fat_object* obj,directory_item* item){
 
 	if (item->has_long_name) {
 		int i;
-		for (i = 0; i < item->long_name_entry_length; i++) {
-			FAT_write_Long_Name_Directory_Entry(item->long_name + item->long_name_entry_length + i - 1, obj->file);
+		for (i = item->long_name_entry_length-1; i >=0 ; i--) {
+			FAT_write_Long_Name_Directory_Entry(item->long_name + i, obj->file);
 		}
 	}
 	
