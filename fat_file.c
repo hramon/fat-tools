@@ -10,7 +10,7 @@ void FAT_remove_file(fat_object* obj,char* path){
 
 	file->file.short_name.DIR_Name[0] = DIR_FREE;
 
-	for (i = 0; i <= file->file.long_name_entry_length; i++) {
+	for (i = 0; i < file->file.long_name_entry_length; i++) {
 		file->file.long_name[i].LDIR_Ord = DIR_FREE;
 	}
 
