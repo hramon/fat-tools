@@ -121,6 +121,7 @@ typedef struct _fat_object{
 	FILE* file;
 	unsigned int start_fat;
 	unsigned int first_cluster;
+	unsigned int* fat;
 }fat_object;
 
 /*Following read and write functions are to write the structs to the disk. Normal writing cannot be performed due to struct alignment*/

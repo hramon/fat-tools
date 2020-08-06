@@ -261,6 +261,8 @@ void FAT_create_fat(char* filename, fat_type type, unsigned int size){
 }
 
 void FAT_read_fat(fat_object* obj, char* filename){
+	int i;
+
 	/*open file*/
 	obj->file = fopen((const char*)filename,"r+b");
 
@@ -279,17 +281,37 @@ void FAT_read_fat(fat_object* obj, char* filename){
 
 	/*calculate some shortcuts for faster seeking*/
 	obj->start_fat = obj->bpb.BPB_RsvdSecCnt*obj->bpb.BPB_ByestsPerSec;
-	obj->first_cluster = obj->start_fat + obj->bpb.specific_per_fat_type.fat32.BPB_FATSz32*2*obj->bpb.BPB_ByestsPerSec;
+	obj->first_cluster = obj->start_fat + obj->bpb.specific_per_fat_type.fat32.BPB_FATSz32*obj->bpb.BPB_NumFATs*obj->bpb.BPB_ByestsPerSec;
+
+	/*populate the local fat*/
+	obj->fat = (unsigned int*)malloc(obj->bpb.specific_per_fat_type.fat32.BPB_FATSz32*sizeof(unsigned int));
+	fseek(obj->file,obj->start_fat,SEEK_SET);
+	fread(obj->fat, sizeof(unsigned int), obj->bpb.specific_per_fat_type.fat32.BPB_FATSz32,obj->file);
+
+	/*update the FSI_Nxt_Free field for easy access*/
+	for (i = 0; i < obj->bpb.specific_per_fat_type.fat32.BPB_FATSz32; i++) {
+		if (obj->fat[i] == 0) {
+			obj->fs_info.FSI_Nxt_Free = i;
+			break;
+		}
+	}
 }
 
 void FAT_close_fat(fat_object* obj){
+
 	/*first flush the fat to the file*/
 	FAT_flush_fat(obj);
+
+	/*free the used memory for the fat table*/
+	free(obj->fat);
+
 	/*close the file handle*/
 	fclose(obj->file);
 }
 
 void FAT_flush_fat(fat_object* obj){
+	int i;
+
 	/*write BPB table*/
 	fseek(obj->file,0,SEEK_SET);
 	//fwrite(&(obj->bpb),sizeof(obj->bpb),1,obj->file);
@@ -304,6 +326,12 @@ void FAT_flush_fat(fat_object* obj){
 	fseek(obj->file,obj->bpb.specific_per_fat_type.fat32.BPB_FSInfo*obj->bpb.BPB_ByestsPerSec,SEEK_SET);
 	//fwrite(&(obj->fs_info),sizeof(obj->fs_info),1,obj->file);
 	FAT_write_FSInfo(&(obj->fs_info),obj->file);
+
+	/*write the internal fat*/
+	fseek(obj->file, obj->start_fat, SEEK_SET);
+	for (i = 0; i < obj->bpb.BPB_NumFATs; i++) {
+		fwrite(obj->fat, sizeof(unsigned int), obj->bpb.specific_per_fat_type.fat32.BPB_FATSz32, obj->file);
+	}
 }
 
 unsigned int FAT_find_next_free_dir_entry(fat_object* obj, unsigned int current_directory,unsigned int n){
@@ -345,36 +373,31 @@ unsigned int FAT_find_next_free_dir_entry(fat_object* obj, unsigned int current_
 
 
 		/*find next cluster for this directory*/
-		fseek(obj->file,obj->start_fat+(current_directory)*4,SEEK_SET);
-		fread(&temp_cluster,sizeof(unsigned int),1,obj->file);
-		if(temp_cluster >= 0x0FFFFFF8){
-			unsigned int next_cluster = FAT_find_next_free_cluster(obj);
-			fseek(obj->file,obj->start_fat+(current_directory-2)*sizeof(unsigned int),SEEK_SET);
-			fwrite(&next_cluster,sizeof(unsigned int),1,obj->file);
-			fflush(obj->file);
+		if (obj->fat[current_directory] >= 0x0FFFFFF8) {
+			obj->fat[current_directory] = FAT_find_next_free_cluster(obj);
 		}
 
-		current_directory = temp_cluster;
+		current_directory = obj->fat[current_directory];
 	}
 
 	return 0;
 }
 
 unsigned int FAT_find_next_free_cluster(fat_object* obj){
+
+	int i;
 	unsigned int next_free = obj->fs_info.FSI_Nxt_Free;
-	unsigned int buffer = 0xFFFFFFFF;
-	unsigned int current_fat_entry = (next_free)*4 + obj->start_fat;
 
-	fseek(obj->file,current_fat_entry,SEEK_SET);
-	fwrite(&buffer,sizeof(buffer),1,obj->file);
-	fflush(obj->file);
+	obj->fat[next_free] = 0xFFFFFFFF;
 
-	
-
-	while(buffer!=0){
-		obj->fs_info.FSI_Nxt_Free++;
-		fread(&buffer,sizeof(buffer),1,obj->file);		
+	for (i = next_free; i < obj->bpb.specific_per_fat_type.fat32.BPB_FATSz32; i++) {
+		if (obj->fat[i] == 0) {
+			obj->fs_info.FSI_Nxt_Free = i;
+			break;
+		}
 	}
+
+	obj->fs_info.FSI_Free_Count--;
 
 	return next_free;
 }
