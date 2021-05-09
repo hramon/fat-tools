@@ -65,7 +65,7 @@ typedef struct _fat_FSInfo{
 }fat_FSInfo;
 
 typedef struct _fat_Directory_Entry{
-	char DIR_Name[11];
+	unsigned char DIR_Name[11];
 	unsigned char DIR_attr;
 	unsigned char DIR_NTRes;
 	unsigned char DIR_CrtTimeTenth;
@@ -100,10 +100,9 @@ typedef struct _fat_Long_Name_Directory_Entry{ /*fix the character names for uni
 #define ATTR_ARCHIVE 0x20
 #define ATTR_LONG_NAME (ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID)
 #define LAST_LONG_ENTRY 0x40
-#define REVERSE_LAST_LONG_ENTRY 0x3f
 
-#define DIR_FREE 0xE5
-#define DIR_FREE_ETC 0x00 /*dir free and following*/
+#define DIR_FREE ((unsigned char) 0xE5)
+#define DIR_FREE_ETC ((unsigned char) 0x00) /*dir free and following*/
 
 #define FAT_BPB_SIZE (sizeof(fat_BPB))
 

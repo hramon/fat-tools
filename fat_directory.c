@@ -152,7 +152,7 @@ void FAT_read_directory_item(fat_object* obj,directory_item* item){
 		fseek(obj->file,-SIZE_DIRECTORY_ENTRY,SEEK_CUR);
 		FAT_read_Long_Name_Directory_Entry(&temp,obj->file);
 
-		item->long_name_entry_length = temp.LDIR_Ord&REVERSE_LAST_LONG_ENTRY;
+		item->long_name_entry_length = temp.LDIR_Ord - LAST_LONG_ENTRY;
 		item->long_name = (fat_Long_Name_Directory_entry*)malloc(item->long_name_entry_length*sizeof(fat_Long_Name_Directory_entry));
 		memcpy(item->long_name+item->long_name_entry_length-1,&temp,sizeof(fat_Long_Name_Directory_entry));
 
